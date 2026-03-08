@@ -1,0 +1,2551 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>CalculateUI</class>
+ <widget class="QWidget" name="CalculateUI">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>300</width>
+    <height>839</height>
+   </rect>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>300</width>
+    <height>839</height>
+   </size>
+  </property>
+  <property name="maximumSize">
+   <size>
+    <width>300</width>
+    <height>839</height>
+   </size>
+  </property>
+  <property name="windowTitle">
+   <string>Calculation</string>
+  </property>
+  <property name="styleSheet">
+   <string notr="true">QTabWidget{
+
+	font-size:18px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	
+}</string>
+  </property>
+  <widget class="QTabWidget" name="tab_ScanMode">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>301</width>
+     <height>321</height>
+    </rect>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">QLabel{
+	text-decroation:none;
+	background:#FFFFFF;
+	color:#000000;
+		
+	font-size:14px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	border-radius:4px;
+}</string>
+   </property>
+   <property name="currentIndex">
+    <number>2</number>
+   </property>
+   <property name="tabBarAutoHide">
+    <bool>false</bool>
+   </property>
+   <widget class="QWidget" name="tab_continuous">
+    <property name="font">
+     <font>
+      <family>Arial</family>
+      <pointsize>14</pointsize>
+     </font>
+    </property>
+    <attribute name="title">
+     <string>MR</string>
+    </attribute>
+    <widget class="QPushButton" name="Button_start_scan">
+     <property name="geometry">
+      <rect>
+       <x>100</x>
+       <y>230</y>
+       <width>91</width>
+       <height>41</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">QPushButton{
+	text-decroation:none;
+	background:#00FF7F;
+	color:#f2f2f2;
+	
+	padding:10px 30px 10px 30px;
+	font-size:16px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	font-weight:bold;
+	border-radius:3px;
+}</string>
+     </property>
+     <property name="text">
+      <string>Run</string>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>20</y>
+       <width>91</width>
+       <height>19</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Metric Radii:</string>
+     </property>
+    </widget>
+    <widget class="QLineEdit" name="lineEdit22">
+     <property name="geometry">
+      <rect>
+       <x>110</x>
+       <y>20</y>
+       <width>181</width>
+       <height>21</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">QLineEdit{
+	text-decroation:none;
+	background:#FFFFFF;
+	color:#000000;
+		
+	font-size:14px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	
+}</string>
+     </property>
+    </widget>
+    <widget class="QCheckBox" name="checkBox">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>60</y>
+       <width>191</width>
+       <height>21</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">QCheckBox{
+	
+	
+	background:#FFFFFF;
+	color:#000000;
+		
+	font-size:13px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	
+}</string>
+     </property>
+     <property name="text">
+      <string>Compute Junctions(Jn)</string>
+     </property>
+    </widget>
+    <widget class="QLineEdit" name="lineEdit_7">
+     <property name="geometry">
+      <rect>
+       <x>210</x>
+       <y>60</y>
+       <width>81</width>
+       <height>21</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">QLineEdit{
+	text-decroation:none;
+	background:#FFFFFF;
+	color:#000000;
+		
+	font-size:14px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	
+}</string>
+     </property>
+    </widget>
+    <widget class="QCheckBox" name="checkBox_2">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>100</y>
+       <width>191</width>
+       <height>21</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">QCheckBox{
+	
+	
+	background:#FFFFFF;
+	color:#000000;
+		
+	font-size:13px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	
+}</string>
+     </property>
+     <property name="text">
+      <string>Compute Weighting(Wgt)</string>
+     </property>
+    </widget>
+    <widget class="QLineEdit" name="lineEdit_8">
+     <property name="geometry">
+      <rect>
+       <x>210</x>
+       <y>100</y>
+       <width>81</width>
+       <height>21</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">QLineEdit{
+	text-decroation:none;
+	background:#FFFFFF;
+	color:#000000;
+		
+	font-size:14px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	
+}</string>
+     </property>
+    </widget>
+   </widget>
+   <widget class="QWidget" name="tab_2">
+    <attribute name="title">
+     <string>DR</string>
+    </attribute>
+    <widget class="QLineEdit" name="lineEdit_2">
+     <property name="geometry">
+      <rect>
+       <x>160</x>
+       <y>20</y>
+       <width>131</width>
+       <height>21</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">QLineEdit{
+	text-decroation:none;
+	background:#FFFFFF;
+	color:#000000;
+		
+	font-size:14px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	
+}</string>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label_3">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>20</y>
+       <width>141</width>
+       <height>19</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Metric Radii:</string>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="Button_start_scan_3">
+     <property name="geometry">
+      <rect>
+       <x>100</x>
+       <y>230</y>
+       <width>91</width>
+       <height>41</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">QPushButton{
+	text-decroation:none;
+	background:#00FF7F;
+	color:#f2f2f2;
+	
+	padding:10px 30px 10px 30px;
+	font-size:16px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	font-weight:bold;
+	border-radius:3px;
+}</string>
+     </property>
+     <property name="text">
+      <string>Run</string>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label_4">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>50</y>
+       <width>141</width>
+       <height>19</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Angle Threshold:</string>
+     </property>
+    </widget>
+    <widget class="QLineEdit" name="lineEdit_3">
+     <property name="geometry">
+      <rect>
+       <x>160</x>
+       <y>50</y>
+       <width>131</width>
+       <height>21</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">QLineEdit{
+	text-decroation:none;
+	background:#FFFFFF;
+	color:#000000;
+		
+	font-size:14px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	
+}</string>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label_5">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>80</y>
+       <width>141</width>
+       <height>19</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Directional Changes:</string>
+     </property>
+    </widget>
+    <widget class="QLineEdit" name="lineEdit_4">
+     <property name="geometry">
+      <rect>
+       <x>160</x>
+       <y>80</y>
+       <width>131</width>
+       <height>21</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">QLineEdit{
+	text-decroation:none;
+	background:#FFFFFF;
+	color:#000000;
+		
+	font-size:14px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	
+}</string>
+     </property>
+    </widget>
+    <widget class="QCheckBox" name="checkBox_3">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>150</y>
+       <width>191</width>
+       <height>21</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">QCheckBox{
+	
+	
+	background:#FFFFFF;
+	color:#000000;
+		
+	font-size:13px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	
+}</string>
+     </property>
+     <property name="text">
+      <string>Compute Weighting(Wgt)</string>
+     </property>
+    </widget>
+    <widget class="QLineEdit" name="lineEdit_9">
+     <property name="geometry">
+      <rect>
+       <x>210</x>
+       <y>150</y>
+       <width>81</width>
+       <height>21</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">QLineEdit{
+	text-decroation:none;
+	background:#FFFFFF;
+	color:#000000;
+		
+	font-size:14px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	
+}</string>
+     </property>
+    </widget>
+    <widget class="QCheckBox" name="checkBox_4">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>120</y>
+       <width>191</width>
+       <height>21</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">QCheckBox{
+	
+	
+	background:#FFFFFF;
+	color:#000000;
+		
+	font-size:13px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	
+}</string>
+     </property>
+     <property name="text">
+      <string>Compute Junctions(Jn)</string>
+     </property>
+    </widget>
+    <widget class="QLineEdit" name="lineEdit_10">
+     <property name="geometry">
+      <rect>
+       <x>210</x>
+       <y>120</y>
+       <width>81</width>
+       <height>21</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">QLineEdit{
+	text-decroation:none;
+	background:#FFFFFF;
+	color:#000000;
+		
+	font-size:14px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	
+}</string>
+     </property>
+    </widget>
+   </widget>
+   <widget class="QWidget" name="tab_interval">
+    <attribute name="title">
+     <string>JnR</string>
+    </attribute>
+    <widget class="QLineEdit" name="lineEdit_5">
+     <property name="geometry">
+      <rect>
+       <x>140</x>
+       <y>50</y>
+       <width>151</width>
+       <height>21</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">QLineEdit{
+	text-decroation:none;
+	background:#FFFFFF;
+	color:#000000;
+		
+	font-size:14px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	
+}</string>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label_6">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>20</y>
+       <width>121</width>
+       <height>19</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">QLabel{
+	text-decroation:none;
+	background:#FFFFFF;
+	color:#000000;
+		
+	font-size:14px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	border-radius:4px;
+}</string>
+     </property>
+     <property name="text">
+      <string>Junction degree:</string>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label_7">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>50</y>
+       <width>121</width>
+       <height>19</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Junctions:</string>
+     </property>
+    </widget>
+    <widget class="QLineEdit" name="lineEdit_6">
+     <property name="geometry">
+      <rect>
+       <x>140</x>
+       <y>20</y>
+       <width>151</width>
+       <height>21</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">QLineEdit{
+	text-decroation:none;
+	background:#FFFFFF;
+	color:#000000;
+		
+	font-size:14px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	
+}</string>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+    </widget>
+    <widget class="QCheckBox" name="checkBox_5">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>90</y>
+       <width>191</width>
+       <height>21</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">QCheckBox{
+	
+	
+	background:#FFFFFF;
+	color:#000000;
+		
+	font-size:13px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	
+}</string>
+     </property>
+     <property name="text">
+      <string>Compute JnDD/JnDDL</string>
+     </property>
+    </widget>
+    <widget class="QLineEdit" name="lineEdit_11">
+     <property name="geometry">
+      <rect>
+       <x>210</x>
+       <y>90</y>
+       <width>81</width>
+       <height>21</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">QLineEdit{
+	text-decroation:none;
+	background:#FFFFFF;
+	color:#000000;
+		
+	font-size:14px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	
+}</string>
+     </property>
+    </widget>
+    <widget class="QCheckBox" name="checkBox_6">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>120</y>
+       <width>191</width>
+       <height>21</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">QCheckBox{
+	
+	
+	background:#FFFFFF;
+	color:#000000;
+		
+	font-size:13px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	
+}</string>
+     </property>
+     <property name="text">
+      <string>Compute Weighting(Wgt)</string>
+     </property>
+    </widget>
+    <widget class="QLineEdit" name="lineEdit_12">
+     <property name="geometry">
+      <rect>
+       <x>210</x>
+       <y>120</y>
+       <width>81</width>
+       <height>21</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">QLineEdit{
+	text-decroation:none;
+	background:#FFFFFF;
+	color:#000000;
+		
+	font-size:14px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	
+}</string>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="Button_start_scan_4">
+     <property name="geometry">
+      <rect>
+       <x>100</x>
+       <y>230</y>
+       <width>91</width>
+       <height>41</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">QPushButton{
+	text-decroation:none;
+	background:#00FF7F;
+	color:#f2f2f2;
+	
+	padding:10px 30px 10px 30px;
+	font-size:16px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	font-weight:bold;
+	border-radius:3px;
+}</string>
+     </property>
+     <property name="text">
+      <string>Run</string>
+     </property>
+    </widget>
+   </widget>
+  </widget>
+  <widget class="QTabWidget" name="tabWidget">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>730</y>
+     <width>301</width>
+     <height>111</height>
+    </rect>
+   </property>
+   <property name="currentIndex">
+    <number>0</number>
+   </property>
+   <widget class="QWidget" name="tab">
+    <attribute name="title">
+     <string>Multi-thread Setting</string>
+    </attribute>
+    <widget class="QLineEdit" name="lineEdit_66">
+     <property name="geometry">
+      <rect>
+       <x>170</x>
+       <y>40</y>
+       <width>71</width>
+       <height>21</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">QLineEdit{
+	text-decroation:none;
+	background:#FFFFFF;
+	color:#FF0000;
+		
+	font-size:14px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	
+}</string>
+     </property>
+     <property name="text">
+      <string>Auto</string>
+     </property>
+    </widget>
+    <widget class="QCheckBox" name="checkBox_7">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>10</y>
+       <width>231</width>
+       <height>21</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">QCheckBox{
+	
+	
+	background:#FFFFFF;
+	color:#000000;
+		
+	font-size:13px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	
+}</string>
+     </property>
+     <property name="text">
+      <string>Multi-threaded computing</string>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label_60">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>40</y>
+       <width>151</width>
+       <height>19</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">QLabel{
+	text-decroation:none;
+	background:#FFFFFF;
+	color:#000000;
+		
+	font-size:14px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	border-radius:4px;
+}</string>
+     </property>
+     <property name="text">
+      <string>Number of threads:</string>
+     </property>
+    </widget>
+   </widget>
+  </widget>
+  <widget class="QTabWidget" name="tab_ScanMode_2">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>320</y>
+     <width>301</width>
+     <height>411</height>
+    </rect>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">QTabWidget{
+	
+	font-size:14px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	
+}</string>
+   </property>
+   <property name="currentIndex">
+    <number>0</number>
+   </property>
+   <property name="tabBarAutoHide">
+    <bool>false</bool>
+   </property>
+   <widget class="QWidget" name="tab_continuous_2">
+    <attribute name="title">
+     <string>Netreach</string>
+    </attribute>
+    <widget class="QTabWidget" name="tab_ScanMode_4">
+     <property name="geometry">
+      <rect>
+       <x>0</x>
+       <y>0</y>
+       <width>311</width>
+       <height>391</height>
+      </rect>
+     </property>
+     <property name="currentIndex">
+      <number>2</number>
+     </property>
+     <property name="tabBarAutoHide">
+      <bool>false</bool>
+     </property>
+     <widget class="QWidget" name="tab_continuous_4">
+      <attribute name="title">
+       <string>MR</string>
+      </attribute>
+      <widget class="QPushButton" name="Button_start_scan_2">
+       <property name="geometry">
+        <rect>
+         <x>110</x>
+         <y>290</y>
+         <width>91</width>
+         <height>41</height>
+        </rect>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QPushButton{
+	text-decroation:none;
+	background:#00FF7F;
+	color:#f2f2f2;
+	
+	padding:10px 30px 10px 30px;
+	font-size:16px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	font-weight:bold;
+	border-radius:3px;
+}</string>
+       </property>
+       <property name="text">
+        <string>Run</string>
+       </property>
+      </widget>
+      <widget class="QLabel" name="label_2">
+       <property name="geometry">
+        <rect>
+         <x>20</x>
+         <y>20</y>
+         <width>91</width>
+         <height>19</height>
+        </rect>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QLabel{
+	text-decroation:none;
+	background:#FFFFFF;
+	color:#000000;
+		
+	font-size:14px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	border-radius:4px;
+}</string>
+       </property>
+       <property name="text">
+        <string>Metric Radii:</string>
+       </property>
+      </widget>
+      <widget class="QLineEdit" name="lineEdit22_2">
+       <property name="geometry">
+        <rect>
+         <x>120</x>
+         <y>20</y>
+         <width>161</width>
+         <height>21</height>
+        </rect>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QLineEdit{
+	text-decroation:none;
+	background:#FFFFFF;
+	color:#000000;
+		
+	font-size:14px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	
+}</string>
+       </property>
+      </widget>
+      <widget class="QGroupBox" name="groupBox_15">
+       <property name="geometry">
+        <rect>
+         <x>10</x>
+         <y>60</y>
+         <width>281</width>
+         <height>91</height>
+        </rect>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QGroupBox{
+	
+	
+	
+		
+	font-size:17px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	
+}</string>
+       </property>
+       <property name="title">
+        <string>options</string>
+       </property>
+       <widget class="QLineEdit" name="lineEdit_39">
+        <property name="geometry">
+         <rect>
+          <x>140</x>
+          <y>30</y>
+          <width>131</width>
+          <height>21</height>
+         </rect>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">QLineEdit{
+	text-decroation:none;
+	background:#FFFFFF;
+	color:#000000;
+		
+	font-size:14px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	
+}</string>
+        </property>
+       </widget>
+       <widget class="QLabel" name="label_32">
+        <property name="geometry">
+         <rect>
+          <x>10</x>
+          <y>30</y>
+          <width>121</width>
+          <height>19</height>
+         </rect>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">QLabel{
+	text-decroation:none;
+	background:#FFFFFF;
+	color:#000000;
+		
+	font-size:14px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	border-radius:4px;
+}</string>
+        </property>
+        <property name="text">
+         <string>Junctions(Jn):</string>
+        </property>
+       </widget>
+       <widget class="QLineEdit" name="lineEdit_40">
+        <property name="geometry">
+         <rect>
+          <x>140</x>
+          <y>60</y>
+          <width>131</width>
+          <height>21</height>
+         </rect>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">QLineEdit{
+	text-decroation:none;
+	background:#FFFFFF;
+	color:#000000;
+		
+	font-size:14px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	
+}</string>
+        </property>
+       </widget>
+       <widget class="QLabel" name="label_33">
+        <property name="geometry">
+         <rect>
+          <x>10</x>
+          <y>60</y>
+          <width>121</width>
+          <height>19</height>
+         </rect>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">QLabel{
+	text-decroation:none;
+	background:#FFFFFF;
+	color:#000000;
+		
+	font-size:14px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	border-radius:4px;
+}</string>
+        </property>
+        <property name="text">
+         <string>Weighting(Wgt):</string>
+        </property>
+       </widget>
+      </widget>
+      <widget class="QLineEdit" name="lineEdit22_3">
+       <property name="geometry">
+        <rect>
+         <x>90</x>
+         <y>190</y>
+         <width>191</width>
+         <height>21</height>
+        </rect>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QLineEdit{
+	text-decroation:none;
+	background:#FFFFFF;
+	color:#000000;
+		
+	font-size:14px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	
+}</string>
+       </property>
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+      <widget class="QLabel" name="label_8">
+       <property name="geometry">
+        <rect>
+         <x>20</x>
+         <y>190</y>
+         <width>61</width>
+         <height>19</height>
+        </rect>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QLabel{
+	text-decroation:none;
+	background:#FFFFFF;
+	color:#000000;
+		
+	font-size:14px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	border-radius:4px;
+}</string>
+       </property>
+       <property name="text">
+        <string>From ID:</string>
+       </property>
+      </widget>
+     </widget>
+     <widget class="QWidget" name="tab_5">
+      <attribute name="title">
+       <string>DR</string>
+      </attribute>
+      <widget class="QPushButton" name="Button_start_scan_8">
+       <property name="geometry">
+        <rect>
+         <x>110</x>
+         <y>290</y>
+         <width>91</width>
+         <height>41</height>
+        </rect>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QPushButton{
+	text-decroation:none;
+	background:#00FF7F;
+	color:#f2f2f2;
+	
+	padding:10px 30px 10px 30px;
+	font-size:16px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	font-weight:bold;
+	border-radius:3px;
+}</string>
+       </property>
+       <property name="text">
+        <string>Run</string>
+       </property>
+      </widget>
+      <widget class="QLineEdit" name="lineEdit_41">
+       <property name="geometry">
+        <rect>
+         <x>170</x>
+         <y>50</y>
+         <width>111</width>
+         <height>21</height>
+        </rect>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QLineEdit{
+	text-decroation:none;
+	background:#FFFFFF;
+	color:#000000;
+		
+	font-size:14px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	
+}</string>
+       </property>
+      </widget>
+      <widget class="QLineEdit" name="lineEdit_42">
+       <property name="geometry">
+        <rect>
+         <x>170</x>
+         <y>20</y>
+         <width>111</width>
+         <height>21</height>
+        </rect>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QLineEdit{
+	text-decroation:none;
+	background:#FFFFFF;
+	color:#000000;
+		
+	font-size:14px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	
+}</string>
+       </property>
+      </widget>
+      <widget class="QLabel" name="label_34">
+       <property name="geometry">
+        <rect>
+         <x>20</x>
+         <y>80</y>
+         <width>141</width>
+         <height>19</height>
+        </rect>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QLabel{
+	text-decroation:none;
+	background:#FFFFFF;
+	color:#000000;
+		
+	font-size:14px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	border-radius:4px;
+}</string>
+       </property>
+       <property name="text">
+        <string>Directional Changes:</string>
+       </property>
+      </widget>
+      <widget class="QLineEdit" name="lineEdit_43">
+       <property name="geometry">
+        <rect>
+         <x>170</x>
+         <y>80</y>
+         <width>111</width>
+         <height>21</height>
+        </rect>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QLineEdit{
+	text-decroation:none;
+	background:#FFFFFF;
+	color:#000000;
+		
+	font-size:14px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	
+}</string>
+       </property>
+      </widget>
+      <widget class="QLabel" name="label_35">
+       <property name="geometry">
+        <rect>
+         <x>20</x>
+         <y>50</y>
+         <width>141</width>
+         <height>19</height>
+        </rect>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QLabel{
+	text-decroation:none;
+	background:#FFFFFF;
+	color:#000000;
+		
+	font-size:14px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	border-radius:4px;
+}</string>
+       </property>
+       <property name="text">
+        <string>Angle Threshold:</string>
+       </property>
+      </widget>
+      <widget class="QLabel" name="label_36">
+       <property name="geometry">
+        <rect>
+         <x>20</x>
+         <y>20</y>
+         <width>141</width>
+         <height>19</height>
+        </rect>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QLabel{
+	text-decroation:none;
+	background:#FFFFFF;
+	color:#000000;
+		
+	font-size:14px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	border-radius:4px;
+}</string>
+       </property>
+       <property name="text">
+        <string>Metric Radii:</string>
+       </property>
+      </widget>
+      <widget class="QGroupBox" name="groupBox_16">
+       <property name="geometry">
+        <rect>
+         <x>10</x>
+         <y>110</y>
+         <width>281</width>
+         <height>91</height>
+        </rect>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QGroupBox{
+	
+	
+	
+		
+	font-size:17px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	
+}</string>
+       </property>
+       <property name="title">
+        <string>options</string>
+       </property>
+       <widget class="QLineEdit" name="lineEdit_44">
+        <property name="geometry">
+         <rect>
+          <x>140</x>
+          <y>30</y>
+          <width>131</width>
+          <height>21</height>
+         </rect>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">QLineEdit{
+	text-decroation:none;
+	background:#FFFFFF;
+	color:#000000;
+		
+	font-size:14px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	
+}</string>
+        </property>
+       </widget>
+       <widget class="QLabel" name="label_37">
+        <property name="geometry">
+         <rect>
+          <x>10</x>
+          <y>30</y>
+          <width>121</width>
+          <height>19</height>
+         </rect>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">QLabel{
+	text-decroation:none;
+	background:#FFFFFF;
+	color:#000000;
+		
+	font-size:14px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	border-radius:4px;
+}</string>
+        </property>
+        <property name="text">
+         <string>Junctions(Jn):</string>
+        </property>
+       </widget>
+       <widget class="QLineEdit" name="lineEdit_45">
+        <property name="geometry">
+         <rect>
+          <x>140</x>
+          <y>60</y>
+          <width>131</width>
+          <height>21</height>
+         </rect>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">QLineEdit{
+	text-decroation:none;
+	background:#FFFFFF;
+	color:#000000;
+		
+	font-size:14px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	
+}</string>
+        </property>
+       </widget>
+       <widget class="QLabel" name="label_38">
+        <property name="geometry">
+         <rect>
+          <x>10</x>
+          <y>60</y>
+          <width>121</width>
+          <height>19</height>
+         </rect>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">QLabel{
+	text-decroation:none;
+	background:#FFFFFF;
+	color:#000000;
+		
+	font-size:14px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	border-radius:4px;
+}</string>
+        </property>
+        <property name="text">
+         <string>Weighting(Wgt):</string>
+        </property>
+       </widget>
+      </widget>
+      <widget class="QLineEdit" name="lineEdit22_4">
+       <property name="geometry">
+        <rect>
+         <x>90</x>
+         <y>230</y>
+         <width>191</width>
+         <height>21</height>
+        </rect>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QLineEdit{
+	text-decroation:none;
+	background:#FFFFFF;
+	color:#000000;
+		
+	font-size:14px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	
+}</string>
+       </property>
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+      <widget class="QLabel" name="label_9">
+       <property name="geometry">
+        <rect>
+         <x>20</x>
+         <y>230</y>
+         <width>61</width>
+         <height>19</height>
+        </rect>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QLabel{
+	text-decroation:none;
+	background:#FFFFFF;
+	color:#000000;
+		
+	font-size:14px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	border-radius:4px;
+}</string>
+       </property>
+       <property name="text">
+        <string>From ID:</string>
+       </property>
+      </widget>
+     </widget>
+     <widget class="QWidget" name="tab_interval_2">
+      <attribute name="title">
+       <string>JnR</string>
+      </attribute>
+      <widget class="QPushButton" name="Button_start_scan_9">
+       <property name="geometry">
+        <rect>
+         <x>110</x>
+         <y>290</y>
+         <width>91</width>
+         <height>41</height>
+        </rect>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QPushButton{
+	text-decroation:none;
+	background:#00FF7F;
+	color:#f2f2f2;
+	
+	padding:10px 30px 10px 30px;
+	font-size:16px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	font-weight:bold;
+	border-radius:3px;
+}</string>
+       </property>
+       <property name="text">
+        <string>Run</string>
+       </property>
+      </widget>
+      <widget class="QLineEdit" name="lineEdit_37">
+       <property name="geometry">
+        <rect>
+         <x>150</x>
+         <y>50</y>
+         <width>141</width>
+         <height>21</height>
+        </rect>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QLineEdit{
+	text-decroation:none;
+	background:#FFFFFF;
+	color:#000000;
+		
+	font-size:14px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	
+}</string>
+       </property>
+      </widget>
+      <widget class="QLabel" name="label_39">
+       <property name="geometry">
+        <rect>
+         <x>20</x>
+         <y>50</y>
+         <width>121</width>
+         <height>19</height>
+        </rect>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QLabel{
+	text-decroation:none;
+	background:#FFFFFF;
+	color:#000000;
+		
+	font-size:14px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	border-radius:4px;
+}</string>
+       </property>
+       <property name="text">
+        <string>Junctions:</string>
+       </property>
+      </widget>
+      <widget class="QLineEdit" name="lineEdit_38">
+       <property name="geometry">
+        <rect>
+         <x>150</x>
+         <y>20</y>
+         <width>141</width>
+         <height>21</height>
+        </rect>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QLineEdit{
+	text-decroation:none;
+	background:#FFFFFF;
+	color:#000000;
+		
+	font-size:14px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	
+}</string>
+       </property>
+      </widget>
+      <widget class="QLabel" name="label_40">
+       <property name="geometry">
+        <rect>
+         <x>20</x>
+         <y>20</y>
+         <width>121</width>
+         <height>19</height>
+        </rect>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QLabel{
+	text-decroation:none;
+	background:#FFFFFF;
+	color:#000000;
+		
+	font-size:14px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	border-radius:4px;
+}</string>
+       </property>
+       <property name="text">
+        <string>Junction degree:</string>
+       </property>
+      </widget>
+      <widget class="QGroupBox" name="groupBox_17">
+       <property name="geometry">
+        <rect>
+         <x>10</x>
+         <y>100</y>
+         <width>291</width>
+         <height>81</height>
+        </rect>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QGroupBox{
+	
+	
+	
+		
+	font-size:17px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	
+}</string>
+       </property>
+       <property name="title">
+        <string>options</string>
+       </property>
+       <widget class="QLineEdit" name="lineEdit_47">
+        <property name="geometry">
+         <rect>
+          <x>140</x>
+          <y>40</y>
+          <width>141</width>
+          <height>21</height>
+         </rect>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">QLineEdit{
+	text-decroation:none;
+	background:#FFFFFF;
+	color:#000000;
+		
+	font-size:14px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	
+}</string>
+        </property>
+       </widget>
+       <widget class="QLabel" name="label_42">
+        <property name="geometry">
+         <rect>
+          <x>10</x>
+          <y>40</y>
+          <width>121</width>
+          <height>19</height>
+         </rect>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">QLabel{
+	text-decroation:none;
+	background:#FFFFFF;
+	color:#000000;
+		
+	font-size:14px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	border-radius:4px;
+}</string>
+        </property>
+        <property name="text">
+         <string>Weighting(Wgt):</string>
+        </property>
+       </widget>
+      </widget>
+      <widget class="QLineEdit" name="lineEdit22_5">
+       <property name="geometry">
+        <rect>
+         <x>90</x>
+         <y>220</y>
+         <width>201</width>
+         <height>21</height>
+        </rect>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QLineEdit{
+	text-decroation:none;
+	background:#FFFFFF;
+	color:#000000;
+		
+	font-size:14px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	
+}</string>
+       </property>
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+      <widget class="QLabel" name="label_10">
+       <property name="geometry">
+        <rect>
+         <x>20</x>
+         <y>220</y>
+         <width>61</width>
+         <height>19</height>
+        </rect>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QLabel{
+	text-decroation:none;
+	background:#FFFFFF;
+	color:#000000;
+		
+	font-size:14px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	border-radius:4px;
+}</string>
+       </property>
+       <property name="text">
+        <string>From ID:</string>
+       </property>
+      </widget>
+     </widget>
+    </widget>
+   </widget>
+   <widget class="QWidget" name="tab_3">
+    <attribute name="title">
+     <string>Geodesics</string>
+    </attribute>
+    <widget class="QTabWidget" name="tab_ScanMode_5">
+     <property name="geometry">
+      <rect>
+       <x>0</x>
+       <y>0</y>
+       <width>311</width>
+       <height>321</height>
+      </rect>
+     </property>
+     <property name="currentIndex">
+      <number>0</number>
+     </property>
+     <property name="tabBarAutoHide">
+      <bool>false</bool>
+     </property>
+     <widget class="QWidget" name="tab_continuous_5">
+      <attribute name="title">
+       <string>MR</string>
+      </attribute>
+      <widget class="QPushButton" name="Button_start_scan_5">
+       <property name="geometry">
+        <rect>
+         <x>110</x>
+         <y>240</y>
+         <width>91</width>
+         <height>41</height>
+        </rect>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QPushButton{
+	text-decroation:none;
+	background:#00FF7F;
+	color:#f2f2f2;
+	
+	padding:10px 30px 10px 30px;
+	font-size:16px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	font-weight:bold;
+	border-radius:3px;
+}</string>
+       </property>
+       <property name="text">
+        <string>Run</string>
+       </property>
+      </widget>
+      <widget class="QGroupBox" name="groupBox_18">
+       <property name="geometry">
+        <rect>
+         <x>10</x>
+         <y>10</y>
+         <width>271</width>
+         <height>121</height>
+        </rect>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QGroupBox{
+	
+	
+	
+		
+	font-size:17px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	
+}</string>
+       </property>
+       <property name="title">
+        <string>options</string>
+       </property>
+       <widget class="QLineEdit" name="lineEdit_50">
+        <property name="geometry">
+         <rect>
+          <x>140</x>
+          <y>60</y>
+          <width>121</width>
+          <height>21</height>
+         </rect>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">QLineEdit{
+	text-decroation:none;
+	background:#FFFFFF;
+	color:#000000;
+		
+	font-size:14px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	
+}</string>
+        </property>
+       </widget>
+       <widget class="QLabel" name="label_45">
+        <property name="geometry">
+         <rect>
+          <x>10</x>
+          <y>60</y>
+          <width>121</width>
+          <height>19</height>
+         </rect>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">QLabel{
+	text-decroation:none;
+	background:#FFFFFF;
+	color:#000000;
+		
+	font-size:14px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	border-radius:4px;
+}</string>
+        </property>
+        <property name="text">
+         <string>Junctions(Jn):</string>
+        </property>
+       </widget>
+       <widget class="QLineEdit" name="lineEdit_51">
+        <property name="geometry">
+         <rect>
+          <x>140</x>
+          <y>90</y>
+          <width>121</width>
+          <height>21</height>
+         </rect>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">QLineEdit{
+	text-decroation:none;
+	background:#FFFFFF;
+	color:#000000;
+		
+	font-size:14px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	
+}</string>
+        </property>
+       </widget>
+       <widget class="QLabel" name="label_46">
+        <property name="geometry">
+         <rect>
+          <x>10</x>
+          <y>90</y>
+          <width>121</width>
+          <height>19</height>
+         </rect>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">QLabel{
+	text-decroation:none;
+	background:#FFFFFF;
+	color:#000000;
+		
+	font-size:14px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	border-radius:4px;
+}</string>
+        </property>
+        <property name="text">
+         <string>Weighting(Wgt):</string>
+        </property>
+       </widget>
+       <widget class="QLineEdit" name="lineEdit_61">
+        <property name="geometry">
+         <rect>
+          <x>140</x>
+          <y>30</y>
+          <width>121</width>
+          <height>21</height>
+         </rect>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">QLineEdit{
+	text-decroation:none;
+	background:#FFFFFF;
+	color:#000000;
+		
+	font-size:14px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	
+}</string>
+        </property>
+       </widget>
+       <widget class="QLabel" name="label_56">
+        <property name="geometry">
+         <rect>
+          <x>10</x>
+          <y>30</y>
+          <width>121</width>
+          <height>19</height>
+         </rect>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">QLabel{
+	text-decroation:none;
+	background:#FFFFFF;
+	color:#000000;
+		
+	font-size:14px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	border-radius:4px;
+}</string>
+        </property>
+        <property name="text">
+         <string>Angle Threshold:</string>
+        </property>
+       </widget>
+      </widget>
+      <widget class="QLineEdit" name="lineEdit_59">
+       <property name="geometry">
+        <rect>
+         <x>80</x>
+         <y>190</y>
+         <width>201</width>
+         <height>21</height>
+        </rect>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QLineEdit{
+	text-decroation:none;
+	background:#FFFFFF;
+	color:#000000;
+		
+	font-size:14px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	
+}</string>
+       </property>
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+      <widget class="QLineEdit" name="lineEdit_60">
+       <property name="geometry">
+        <rect>
+         <x>80</x>
+         <y>160</y>
+         <width>201</width>
+         <height>21</height>
+        </rect>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QLineEdit{
+	text-decroation:none;
+	background:#FFFFFF;
+	color:#000000;
+		
+	font-size:14px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	
+}</string>
+       </property>
+      </widget>
+      <widget class="QLabel" name="label_54">
+       <property name="geometry">
+        <rect>
+         <x>10</x>
+         <y>160</y>
+         <width>61</width>
+         <height>19</height>
+        </rect>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QLabel{
+	text-decroation:none;
+	background:#FFFFFF;
+	color:#000000;
+		
+	font-size:14px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	border-radius:4px;
+}</string>
+       </property>
+       <property name="text">
+        <string>From ID:</string>
+       </property>
+      </widget>
+      <widget class="QLabel" name="label_55">
+       <property name="geometry">
+        <rect>
+         <x>10</x>
+         <y>190</y>
+         <width>61</width>
+         <height>19</height>
+        </rect>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QLabel{
+	text-decroation:none;
+	background:#FFFFFF;
+	color:#000000;
+		
+	font-size:14px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	border-radius:4px;
+}</string>
+       </property>
+       <property name="text">
+        <string>To ID:</string>
+       </property>
+      </widget>
+     </widget>
+     <widget class="QWidget" name="tab_6">
+      <attribute name="title">
+       <string>DR</string>
+      </attribute>
+      <widget class="QPushButton" name="Button_start_scan_10">
+       <property name="geometry">
+        <rect>
+         <x>110</x>
+         <y>240</y>
+         <width>91</width>
+         <height>41</height>
+        </rect>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QPushButton{
+	text-decroation:none;
+	background:#00FF7F;
+	color:#f2f2f2;
+	
+	padding:10px 30px 10px 30px;
+	font-size:16px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	font-weight:bold;
+	border-radius:3px;
+}</string>
+       </property>
+       <property name="text">
+        <string>Run</string>
+       </property>
+      </widget>
+      <widget class="QLineEdit" name="lineEdit_52">
+       <property name="geometry">
+        <rect>
+         <x>150</x>
+         <y>20</y>
+         <width>131</width>
+         <height>21</height>
+        </rect>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QLineEdit{
+	text-decroation:none;
+	background:#FFFFFF;
+	color:#000000;
+		
+	font-size:14px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	
+}</string>
+       </property>
+      </widget>
+      <widget class="QLabel" name="label_48">
+       <property name="geometry">
+        <rect>
+         <x>20</x>
+         <y>20</y>
+         <width>121</width>
+         <height>19</height>
+        </rect>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QLabel{
+	text-decroation:none;
+	background:#FFFFFF;
+	color:#000000;
+		
+	font-size:14px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	border-radius:4px;
+}</string>
+       </property>
+       <property name="text">
+        <string>Angle Threshold:</string>
+       </property>
+      </widget>
+      <widget class="QGroupBox" name="groupBox_19">
+       <property name="geometry">
+        <rect>
+         <x>10</x>
+         <y>50</y>
+         <width>281</width>
+         <height>101</height>
+        </rect>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QGroupBox{
+	
+	
+	
+		
+	font-size:17px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	
+}</string>
+       </property>
+       <property name="title">
+        <string>options</string>
+       </property>
+       <widget class="QLineEdit" name="lineEdit_53">
+        <property name="geometry">
+         <rect>
+          <x>140</x>
+          <y>30</y>
+          <width>131</width>
+          <height>21</height>
+         </rect>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">QLineEdit{
+	text-decroation:none;
+	background:#FFFFFF;
+	color:#000000;
+		
+	font-size:14px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	
+}</string>
+        </property>
+       </widget>
+       <widget class="QLabel" name="label_47">
+        <property name="geometry">
+         <rect>
+          <x>10</x>
+          <y>30</y>
+          <width>121</width>
+          <height>19</height>
+         </rect>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">QLabel{
+	text-decroation:none;
+	background:#FFFFFF;
+	color:#000000;
+		
+	font-size:14px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	border-radius:4px;
+}</string>
+        </property>
+        <property name="text">
+         <string>Junctions(Jn):</string>
+        </property>
+       </widget>
+       <widget class="QLineEdit" name="lineEdit_54">
+        <property name="geometry">
+         <rect>
+          <x>140</x>
+          <y>60</y>
+          <width>131</width>
+          <height>21</height>
+         </rect>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">QLineEdit{
+	text-decroation:none;
+	background:#FFFFFF;
+	color:#000000;
+		
+	font-size:14px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	
+}</string>
+        </property>
+       </widget>
+       <widget class="QLabel" name="label_49">
+        <property name="geometry">
+         <rect>
+          <x>10</x>
+          <y>60</y>
+          <width>121</width>
+          <height>19</height>
+         </rect>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">QLabel{
+	text-decroation:none;
+	background:#FFFFFF;
+	color:#000000;
+		
+	font-size:14px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	border-radius:4px;
+}</string>
+        </property>
+        <property name="text">
+         <string>Weighting(Wgt):</string>
+        </property>
+       </widget>
+      </widget>
+      <widget class="QLabel" name="label_50">
+       <property name="geometry">
+        <rect>
+         <x>20</x>
+         <y>170</y>
+         <width>61</width>
+         <height>19</height>
+        </rect>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QLabel{
+	text-decroation:none;
+	background:#FFFFFF;
+	color:#000000;
+		
+	font-size:14px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	border-radius:4px;
+}</string>
+       </property>
+       <property name="text">
+        <string>From ID:</string>
+       </property>
+      </widget>
+      <widget class="QLineEdit" name="lineEdit_55">
+       <property name="geometry">
+        <rect>
+         <x>90</x>
+         <y>170</y>
+         <width>191</width>
+         <height>21</height>
+        </rect>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QLineEdit{
+	text-decroation:none;
+	background:#FFFFFF;
+	color:#000000;
+		
+	font-size:14px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	
+}</string>
+       </property>
+      </widget>
+      <widget class="QLineEdit" name="lineEdit_57">
+       <property name="geometry">
+        <rect>
+         <x>90</x>
+         <y>200</y>
+         <width>191</width>
+         <height>21</height>
+        </rect>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QLineEdit{
+	text-decroation:none;
+	background:#FFFFFF;
+	color:#000000;
+		
+	font-size:14px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	
+}</string>
+       </property>
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+      <widget class="QLabel" name="label_52">
+       <property name="geometry">
+        <rect>
+         <x>20</x>
+         <y>200</y>
+         <width>61</width>
+         <height>19</height>
+        </rect>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QLabel{
+	text-decroation:none;
+	background:#FFFFFF;
+	color:#000000;
+		
+	font-size:14px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	border-radius:4px;
+}</string>
+       </property>
+       <property name="text">
+        <string>To ID:</string>
+       </property>
+      </widget>
+     </widget>
+     <widget class="QWidget" name="tab_interval_3">
+      <attribute name="title">
+       <string>JnR</string>
+      </attribute>
+      <widget class="QPushButton" name="Button_start_scan_11">
+       <property name="geometry">
+        <rect>
+         <x>110</x>
+         <y>240</y>
+         <width>91</width>
+         <height>41</height>
+        </rect>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QPushButton{
+	text-decroation:none;
+	background:#00FF7F;
+	color:#f2f2f2;
+	
+	padding:10px 30px 10px 30px;
+	font-size:16px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	font-weight:bold;
+	border-radius:3px;
+}</string>
+       </property>
+       <property name="text">
+        <string>Run</string>
+       </property>
+      </widget>
+      <widget class="QLineEdit" name="lineEdit_58">
+       <property name="geometry">
+        <rect>
+         <x>150</x>
+         <y>20</y>
+         <width>131</width>
+         <height>21</height>
+        </rect>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QLineEdit{
+	text-decroation:none;
+	background:#FFFFFF;
+	color:#000000;
+		
+	font-size:14px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	
+}</string>
+       </property>
+      </widget>
+      <widget class="QLabel" name="label_53">
+       <property name="geometry">
+        <rect>
+         <x>20</x>
+         <y>20</y>
+         <width>121</width>
+         <height>19</height>
+        </rect>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QLabel{
+	text-decroation:none;
+	background:#FFFFFF;
+	color:#000000;
+		
+	font-size:14px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	border-radius:4px;
+}</string>
+       </property>
+       <property name="text">
+        <string>Junction degree:</string>
+       </property>
+      </widget>
+      <widget class="QGroupBox" name="groupBox_20">
+       <property name="geometry">
+        <rect>
+         <x>10</x>
+         <y>50</y>
+         <width>281</width>
+         <height>101</height>
+        </rect>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QGroupBox{
+	
+	
+	
+		
+	font-size:17px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	
+}</string>
+       </property>
+       <property name="title">
+        <string>options</string>
+       </property>
+       <widget class="QLineEdit" name="lineEdit_56">
+        <property name="geometry">
+         <rect>
+          <x>140</x>
+          <y>70</y>
+          <width>131</width>
+          <height>21</height>
+         </rect>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">QLineEdit{
+	text-decroation:none;
+	background:#FFFFFF;
+	color:#000000;
+		
+	font-size:14px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	
+}</string>
+        </property>
+       </widget>
+       <widget class="QLabel" name="label_51">
+        <property name="geometry">
+         <rect>
+          <x>10</x>
+          <y>70</y>
+          <width>121</width>
+          <height>19</height>
+         </rect>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">QLabel{
+	text-decroation:none;
+	background:#FFFFFF;
+	color:#000000;
+		
+	font-size:14px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	border-radius:4px;
+}</string>
+        </property>
+        <property name="text">
+         <string>Weighting(Wgt):</string>
+        </property>
+       </widget>
+       <widget class="QLineEdit" name="lineEdit_62">
+        <property name="geometry">
+         <rect>
+          <x>140</x>
+          <y>30</y>
+          <width>131</width>
+          <height>21</height>
+         </rect>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">QLineEdit{
+	text-decroation:none;
+	background:#FFFFFF;
+	color:#000000;
+		
+	font-size:14px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	
+}</string>
+        </property>
+       </widget>
+       <widget class="QLabel" name="label_57">
+        <property name="geometry">
+         <rect>
+          <x>10</x>
+          <y>30</y>
+          <width>121</width>
+          <height>19</height>
+         </rect>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">QLabel{
+	text-decroation:none;
+	background:#FFFFFF;
+	color:#000000;
+		
+	font-size:14px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	border-radius:4px;
+}</string>
+        </property>
+        <property name="text">
+         <string>Angle Threshold:</string>
+        </property>
+       </widget>
+      </widget>
+      <widget class="QLineEdit" name="lineEdit_63">
+       <property name="geometry">
+        <rect>
+         <x>90</x>
+         <y>200</y>
+         <width>191</width>
+         <height>21</height>
+        </rect>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QLineEdit{
+	text-decroation:none;
+	background:#FFFFFF;
+	color:#000000;
+		
+	font-size:14px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	
+}</string>
+       </property>
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+      <widget class="QLabel" name="label_58">
+       <property name="geometry">
+        <rect>
+         <x>20</x>
+         <y>170</y>
+         <width>61</width>
+         <height>19</height>
+        </rect>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QLabel{
+	text-decroation:none;
+	background:#FFFFFF;
+	color:#000000;
+		
+	font-size:14px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	border-radius:4px;
+}</string>
+       </property>
+       <property name="text">
+        <string>From ID:</string>
+       </property>
+      </widget>
+      <widget class="QLineEdit" name="lineEdit_64">
+       <property name="geometry">
+        <rect>
+         <x>90</x>
+         <y>170</y>
+         <width>191</width>
+         <height>21</height>
+        </rect>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QLineEdit{
+	text-decroation:none;
+	background:#FFFFFF;
+	color:#000000;
+		
+	font-size:14px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	
+}</string>
+       </property>
+      </widget>
+      <widget class="QLabel" name="label_59">
+       <property name="geometry">
+        <rect>
+         <x>20</x>
+         <y>200</y>
+         <width>61</width>
+         <height>19</height>
+        </rect>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QLabel{
+	text-decroation:none;
+	background:#FFFFFF;
+	color:#000000;
+		
+	font-size:14px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	border-radius:4px;
+}</string>
+       </property>
+       <property name="text">
+        <string>To ID:</string>
+       </property>
+      </widget>
+     </widget>
+    </widget>
+    <widget class="QLineEdit" name="lineEdit_65">
+     <property name="geometry">
+      <rect>
+       <x>0</x>
+       <y>320</y>
+       <width>231</width>
+       <height>21</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">QLineEdit{
+	text-decroation:none;
+	background:#FFFFFF;
+	color:#000000;
+		
+	font-size:14px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	
+}</string>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="pushButton_2">
+     <property name="geometry">
+      <rect>
+       <x>232</x>
+       <y>320</y>
+       <width>61</width>
+       <height>21</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">QPushButton{
+	text-decroation:none;
+	background:#CCCCCC;
+	color:#000000;
+		
+	font-size:14px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	border-radius:3px;
+}</string>
+     </property>
+     <property name="text">
+      <string>import</string>
+     </property>
+    </widget>
+    <widget class="QCheckBox" name="checkBox_8">
+     <property name="geometry">
+      <rect>
+       <x>20</x>
+       <y>350</y>
+       <width>211</width>
+       <height>21</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">QCheckBox{
+	
+	
+	background:#FFFFFF;
+	color:#000000;
+		
+	font-size:13px;
+	font-family:微软雅黑,宋体,Arial,Helvetica,Verdana,sans-serif;
+	
+}</string>
+     </property>
+     <property name="text">
+      <string>output Path and Visualize</string>
+     </property>
+     <property name="checked">
+      <bool>true</bool>
+     </property>
+     <property name="tristate">
+      <bool>false</bool>
+     </property>
+    </widget>
+   </widget>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

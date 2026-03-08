@@ -1,0 +1,35 @@
+# IDEs and editors
+.vscode/
+.idea/
+.vs/
+*.user
+*.suo
+
+# Build outputs
+build/
+**/build/
+cmake-build-*/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+compile_commands.json
+
+# Generated binaries and debug symbols
+*.exe
+*.dll
+*.dylib
+*.so
+*.lib
+*.a
+*.pdb
+*.ilk
+*.obj
+*.o
+
+# Local runtime and packaged artifacts
+dist/
+release/
+debug/
+*.zip
+*.7z
+*.tar.gz

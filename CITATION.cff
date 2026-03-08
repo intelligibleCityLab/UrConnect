@@ -1,0 +1,17 @@
+cff-version: 1.2.0
+message: "If you use UrConnect in your research, please cite the software and the associated publication when available."
+title: "UrConnect"
+type: software
+authors:
+  - name: "Intelligible City Lab"
+repository-code: "https://github.com/intelligibleCityLab/UrConnect"
+license: "GPL-3.0-or-later"
+abstract: "UrConnect is a standalone spatial configuration analysis tool for urban street networks, extending depthmapX-style workflows with UrbanConnect reach and directional-distance measures."
+keywords:
+  - spatial-analysis
+  - urban-planning
+  - street-networks
+  - space-syntax
+  - gis
+  - qt
+  - cpp
