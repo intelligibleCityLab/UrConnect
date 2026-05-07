@@ -35,13 +35,13 @@ jobs:
           name: urconnect-docs-html
           path: docs/_build/html
       - name: Upload GitHub Pages artifact
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        if: github.event.repository.private == false && github.ref == 'refs/heads/main' && github.event_name == 'push'
         uses: actions/upload-pages-artifact@v4
         with:
           path: docs/_build/html
 
   deploy:
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: github.event.repository.private == false && github.ref == 'refs/heads/main' && github.event_name == 'push'
     needs: build
     runs-on: ubuntu-24.04
     environment:
