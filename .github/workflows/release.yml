@@ -87,13 +87,22 @@ jobs:
           else
             QT5_ROOT=""
             BOOST_ROOT="/usr/include"
-            CMAKE_EXTRA_ARGS=(-DCMAKE_CXX_FLAGS_RELEASE="-O2 -DNDEBUG")
+            CMAKE_EXTRA_ARGS=(
+              -DCMAKE_C_FLAGS_RELEASE="-O0 -g0 -DNDEBUG"
+              -DCMAKE_CXX_FLAGS_RELEASE="-O0 -g0 -DNDEBUG"
+            )
           fi
           cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DQT5_ROOT="${QT5_ROOT}" -DBOOST_ROOT="${BOOST_ROOT}" "${CMAKE_EXTRA_ARGS[@]}"
 
       - name: Build
-        timeout-minutes: 45
-        run: cmake --build build --config Release --parallel
+        timeout-minutes: 90
+        shell: bash
+        run: |
+          if [ "$RUNNER_OS" = "Linux" ]; then
+            cmake --build build --config Release --parallel 2
+          else
+            cmake --build build --config Release --parallel
+          fi
 
       - name: Deploy Qt runtime on Windows
         if: runner.os == 'Windows'
