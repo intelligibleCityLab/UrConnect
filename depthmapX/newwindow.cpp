@@ -3,7 +3,7 @@
 #include <QVBoxLayout> 
 #include <qdebug.h>
 #include "qpushbutton.h"
-#include <qbuttonGroup.h>
+#include <QButtonGroup>
 #include <QScrollArea>
 
 
