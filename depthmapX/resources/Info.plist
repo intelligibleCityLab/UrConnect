@@ -6,14 +6,18 @@
 	<string>NSApplication</string>
 	<key>CFBundleIconFile</key>
 	<string>depthmapX.icns</string>
+	<key>CFBundleName</key>
+	<string>UrConnect</string>
+	<key>CFBundleDisplayName</key>
+	<string>UrConnect</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
 	<key>CFBundleExecutable</key>
-	<string>depthmapX</string>
+	<string>UrConnect</string>
 	<key>CFBundleIdentifier</key>
-	<string>com.spacegroupucl.depthmapX</string>
+	<string>org.intelligiblecitylab.UrConnect</string>
 	<key>CFBundleDocumentTypes</key>
     <array>
         <dict>

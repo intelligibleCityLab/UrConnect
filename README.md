@@ -77,7 +77,7 @@ If you use UrConnect in academic work, please cite the project. See [CITATION.cf
 
 ## License
 
-UrConnect is licensed under the GNU General Public License v3.0 or later. This is the correct conservative license because UrConnect is derived from depthmapX/sala components carrying GPLv3-or-later notices. Bundled compatible components are summarized in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+UrConnect is licensed under the GNU General Public License v3.0 or later. Third-party component notices are listed in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
 ## Acknowledgements
 

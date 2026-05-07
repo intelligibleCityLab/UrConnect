@@ -1,7 +1,7 @@
 ﻿# depthmapX 应用程序构建配置
 
 # 应用程序名称
-set(APP_NAME depthmapX)
+set(APP_NAME UrConnect)
 
 # CMake 配置
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
@@ -179,6 +179,8 @@ elseif(APPLE)
     )
     set_target_properties(${APP_NAME} PROPERTIES
         MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/resources/Info.plist
+        MACOSX_BUNDLE_BUNDLE_NAME "UrConnect"
+        MACOSX_BUNDLE_GUI_IDENTIFIER "org.intelligiblecitylab.UrConnect"
         RUNTIME_OUTPUT_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
     )
 endif()

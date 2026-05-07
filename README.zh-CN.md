@@ -58,4 +58,4 @@ cmake --build build --config Release
 
 ## 许可证
 
-UrConnect 使用 GNU General Public License v3.0 or later。由于项目派生自带 GPLv3-or-later 声明的 depthmapX/sala 组件，这是当前最稳妥的许可证选择。第三方组件说明见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
+UrConnect 使用 GNU General Public License v3.0 or later。第三方组件说明见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。

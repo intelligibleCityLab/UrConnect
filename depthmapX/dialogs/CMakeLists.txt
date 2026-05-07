@@ -4,7 +4,7 @@
 set(CMAKE_AUTOMOC ON)
 
 # 向主应用程序添加源文件
-target_sources(depthmapX
+target_sources(${APP_NAME}
     PUBLIC
         TopoMetDlg.h
         SegmentAnalysisDlg.h

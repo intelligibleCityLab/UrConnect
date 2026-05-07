@@ -14,7 +14,7 @@ Windows 是 v0.1.0 的主要发布目标。macOS 和 Linux 包作为 experimenta
 - macOS experimental: `UrConnect-v0.1.0-macos-arm64-experimental.tar.gz`
 - Linux experimental: `UrConnect-v0.1.0-linux-x64-experimental.tar.gz`
 
-解压后运行 `depthmapX` 可执行文件或应用包。可执行目标名继承自 depthmapX，项目名称和文档名称为 UrConnect。
+解压后运行 `UrConnect` 可执行文件或应用包。
 
 ## 从源码构建
 

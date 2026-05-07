@@ -14,7 +14,7 @@ Download the package for your operating system from the GitHub Releases page:
 - macOS experimental: `UrConnect-v0.1.0-macos-arm64-experimental.tar.gz`
 - Linux experimental: `UrConnect-v0.1.0-linux-x64-experimental.tar.gz`
 
-Unpack the archive and run the `depthmapX` executable or application bundle. The executable name is inherited from the original depthmapX target while the project and documentation use the UrConnect name.
+Unpack the archive and run the `UrConnect` executable or application bundle.
 
 ## Build From Source
 

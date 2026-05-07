@@ -110,26 +110,28 @@ jobs:
         run: |
           New-Item -ItemType Directory -Force package | Out-Null
           Copy-Item build/bin/Release/* package -Recurse -Force
-          windeployqt package/depthmapX.exe
+          windeployqt package/UrConnect.exe
 
       - name: Deploy Qt runtime on macOS
         if: runner.os == 'macOS'
         run: |
           mkdir -p package
           app_path=""
-          for candidate in build/bin/depthmapX.app build/bin/Release/depthmapX.app; do
+          for candidate in build/bin/UrConnect.app build/bin/Release/UrConnect.app; do
             if [ -d "$candidate" ]; then
               app_path="$candidate"
               break
             fi
           done
           if [ -z "$app_path" ]; then
-            echo "depthmapX.app was not found under build/bin"
+            echo "UrConnect.app was not found under build/bin"
             find build/bin -maxdepth 3 -print || true
             exit 1
           fi
           cp -R "$app_path" package/
-          macdeployqt package/depthmapX.app -always-overwrite
+          macdeployqt package/UrConnect.app -always-overwrite
+          codesign --force --deep --sign - package/UrConnect.app
+          codesign --verify --deep --strict --verbose=2 package/UrConnect.app
 
       - name: Package Linux executable
         if: runner.os == 'Linux'
@@ -198,5 +200,6 @@ jobs:
           name: UrConnect ${{ github.ref_name }}
           body_path: release-notes.md
           files: artifacts/**/*
+          overwrite_files: true
           draft: false
           prerelease: false
