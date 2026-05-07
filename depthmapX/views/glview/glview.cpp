@@ -23,6 +23,7 @@
 #include <QMouseEvent>
 #include <QCoreApplication>
 #include <QGLWidget>
+#include <QPainter>
 #include <qfiledialog.h>
 #include <QtWidgets/QMessageBox>
 
@@ -299,7 +300,6 @@ void GLView::paintGL()
 	//设置当前绘图使用的颜色
 	extern PafColor global_color;
 	//glColor3f(255.0f, 0.0f, 0.0f);
-	float a = global_color.redf();
 	glColor3f(global_color.redf(), global_color.greenf(), global_color.bluef());
 	
 	float left_x = -0.992f, left_y = -0.992f;
@@ -326,17 +326,16 @@ void GLView::paintGL()
 	glVertex3f(right_x, left_y + line_len, 0);
 	glEnd();
 
-	//比例尺
-#ifdef _WIN32
-	setFont(QFont("Times", 6));
-	wglUseFontBitmaps(wglGetCurrentDC(), 0, 256, 1000);
-	glListBase(1000);
-	glRasterPos3f(-0.94f, -0.98f, 0.0f);
-	glCallLists(static_cast<GLsizei>(scale_str.size()), GL_UNSIGNED_BYTE, scale_str.c_str());
-#endif
-
 	//刷新缓冲，保证绘图命令能被执行
 	glFlush();
+
+	QPainter painter(this);
+	painter.setRenderHint(QPainter::TextAntialiasing, true);
+	painter.setPen(QColor::fromRgbF(global_color.redf(), global_color.greenf(), global_color.bluef()));
+	painter.setFont(QFont("Times", 8));
+	const int text_x = int(((-0.94f + 1.0f) * 0.5f) * width);
+	const int text_y = std::max(12, std::min(height - 6, int(((1.0f - (-0.98f)) * 0.5f) * height)));
+	painter.drawText(text_x, text_y, QString::fromStdString(scale_str));
 
 }
 

@@ -8,7 +8,7 @@
 4. 输入参数并点击 `Run`。
 5. 查看地图可视化、属性字段和导出结果。
 
-```{figure} ../_static/images/guide/4.32.png
+```{figure} ../_static/images/guide/4.60.png
 :alt: UrConnect 软件界面
 
 UrConnect 软件界面。

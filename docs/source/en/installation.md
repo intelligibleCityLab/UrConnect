@@ -1,18 +1,18 @@
 # Installation
 
-UrConnect is currently distributed as source code and as planned release binaries. The desktop application is written in C++ with Qt 5, CMake, Boost headers, OpenGL, and bundled Shapelib sources.
+UrConnect is distributed through GitHub Releases and as source code. The desktop application is written in C++ with Qt 5, CMake, Boost headers, OpenGL, and bundled Shapelib sources.
 
 ## Supported Platforms
 
-The CMake project contains platform branches for Windows, macOS, and Linux. Windows/MSVC is the most established build path. macOS and Linux are intended targets, but they should be treated as release candidates until the continuous integration builds are green on all three platforms.
+Windows is the primary v0.1.0 release target. macOS and Linux packages are provided as experimental builds while cross-platform validation continues.
 
 ## Install From A Release
 
-When release artifacts are available, download the package for your operating system from the GitHub Releases page:
+Download the package for your operating system from the GitHub Releases page:
 
-- Windows: `UrConnect-windows-x64.zip`
-- macOS: `UrConnect-macos-arm64.tar.gz` or `UrConnect-macos-x64.tar.gz`
-- Linux: `UrConnect-linux-x64.tar.gz`
+- Windows: `UrConnect-v0.1.0-windows-x64.zip`
+- macOS experimental: `UrConnect-v0.1.0-macos-arm64-experimental.tar.gz`
+- Linux experimental: `UrConnect-v0.1.0-linux-x64-experimental.tar.gz`
 
 Unpack the archive and run the `depthmapX` executable or application bundle. The executable name is inherited from the original depthmapX target while the project and documentation use the UrConnect name.
 

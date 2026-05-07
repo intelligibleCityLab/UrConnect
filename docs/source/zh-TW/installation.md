@@ -1,18 +1,18 @@
 # 安裝
 
-UrConnect 目前以源碼和計劃發布的二進位包形式分發。桌面程式使用 C++、Qt 5、CMake、Boost 標頭、OpenGL，以及隨源碼攜帶的 Shapelib。
+UrConnect 透過 GitHub Releases 和源碼形式分發。桌面程式使用 C++、Qt 5、CMake、Boost 標頭、OpenGL，以及隨源碼攜帶的 Shapelib。
 
 ## 平台狀態
 
-專案的 CMake 已包含 Windows、macOS、Linux 三個平台分支。Windows/MSVC 是歷史上最成熟的構建路徑；macOS 已經在本機用 Homebrew Qt 5 和 Boost 通過 Release 構建；Linux 在三平台 CI 全部通過前仍建議視為預覽構建。
+Windows 是 v0.1.0 的主要發布目標。macOS 和 Linux 包作為 experimental 版本提供，跨平台驗證仍在繼續。
 
 ## 從發布包安裝
 
 發布包可在 GitHub Releases 頁面下載：
 
-- Windows: `UrConnect-windows-x64.zip`
-- macOS: `UrConnect-macos-arm64.tar.gz` 或 `UrConnect-macos-x64.tar.gz`
-- Linux: `UrConnect-linux-x64.tar.gz`
+- Windows: `UrConnect-v0.1.0-windows-x64.zip`
+- macOS experimental: `UrConnect-v0.1.0-macos-arm64-experimental.tar.gz`
+- Linux experimental: `UrConnect-v0.1.0-linux-x64-experimental.tar.gz`
 
 解壓後執行 `depthmapX` 可執行檔或應用程式包。可執行目標名繼承自 depthmapX，專案名稱和文件名稱為 UrConnect。
 

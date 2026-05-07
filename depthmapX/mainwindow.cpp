@@ -48,6 +48,8 @@
 #else
 #include <chrono>
 #include <functional>
+#include <QGuiApplication>
+#include <QScreen>
 #include <sys/stat.h>
 #include <type_traits>
 #if defined(__APPLE__)
@@ -66,15 +68,8 @@ struct MEMORYSTATUSEX {
 	DWORDLONG ullTotalPhys;
 	DWORDLONG ullAvailPhys;
 };
-struct POINT {
-	int x;
-	int y;
-};
 constexpr int SM_CXSCREEN = 0;
 constexpr int SM_CYSCREEN = 1;
-constexpr unsigned int MOUSEEVENTF_ABSOLUTE = 0x8000;
-constexpr unsigned int MOUSEEVENTF_LEFTDOWN = 0x0002;
-constexpr unsigned int MOUSEEVENTF_LEFTUP = 0x0004;
 inline void Sleep(unsigned int milliseconds)
 {
 	std::this_thread::sleep_for(std::chrono::milliseconds(milliseconds));
@@ -115,20 +110,11 @@ inline unsigned long long SetThreadAffinityMask(HANDLE, long long)
 {
 	return 0;
 }
-inline bool GetCursorPos(POINT *)
-{
-	return false;
-}
-inline bool SetCursorPos(int, int)
-{
-	return false;
-}
-inline void mouse_event(unsigned int, int, int, unsigned int, unsigned long)
-{
-}
 inline int GetSystemMetrics(int metric)
 {
-	return metric == SM_CYSCREEN ? 1080 : 1920;
+	const QScreen *screen = QGuiApplication::primaryScreen();
+	const QRect geometry = screen ? screen->availableGeometry() : QRect(0, 0, 1920, 1080);
+	return metric == SM_CYSCREEN ? geometry.height() : geometry.width();
 }
 template <typename A, typename B>
 inline typename std::common_type<A, B>::type min(A a, B b)
@@ -3997,14 +3983,8 @@ void MainWindow::setBackground(QColor newColor) {
 		GLView *child = qobject_cast<GLView*>(windows.at(i)->widget());
 		if (!child) continue;
 		child->UpdateBackgroundColor(getColor(newColor.red(), newColor.green(), newColor.blue()));
+		child->update();
 	}
-
-	POINT pos = { 0,0 };
-	GetCursorPos(&pos);
-	int x = pos.x, y = pos.y;
-	SetCursorPos(x, y);
-	mouse_event(MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_LEFTDOWN, x, y, 0, 0);
-	mouse_event(MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_LEFTUP, x, y, 0, 0);
 }
 
 void MainWindow::PushFromID(bool checked) {

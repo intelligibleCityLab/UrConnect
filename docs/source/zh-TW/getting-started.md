@@ -8,7 +8,7 @@
 4. 輸入參數並點擊 `Run`。
 5. 查看地圖視覺化、屬性欄位和匯出結果。
 
-```{figure} ../_static/images/guide/4.32.png
+```{figure} ../_static/images/guide/4.60.png
 :alt: UrConnect 軟體介面
 
 UrConnect 軟體介面。

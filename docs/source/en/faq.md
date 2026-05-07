@@ -2,7 +2,7 @@
 
 ## Is UrConnect only for Windows?
 
-No. The CMake project defines Windows, macOS, and Linux targets. Windows is currently the most established build path. macOS has been configured locally with Homebrew Qt 5 and Boost, and compile-time portability issues are being fixed. Linux should be supported through CI once case-sensitive source paths and GLU dependencies are consistently handled.
+No. Windows is the primary v0.1.0 release target, and macOS/Linux packages are available as experimental builds. The core analysis code is shared across platforms; the experimental label reflects packaging and validation status.
 
 ## Does UrConnect edit street geometry?
 

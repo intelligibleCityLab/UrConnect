@@ -36,7 +36,7 @@ Weighted reach and distance
 
 ## Interface Overview
 
-```{figure} ../_static/images/guide/4.32.png
+```{figure} ../_static/images/guide/4.60.png
 :alt: UrConnect interface
 
 UrConnect desktop interface: tool and data panel, analysis panel, visualization panel, summary area, map window, and attribute panel.

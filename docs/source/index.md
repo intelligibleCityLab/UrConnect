@@ -4,7 +4,7 @@ UrConnect is a desktop tool for spatial configuration analysis of urban street n
 
 ```{raw} html
 <div class="urconnect-hero">
-  <img src="_static/images/guide/4.32.png" alt="UrConnect desktop interface">
+  <img src="_static/images/guide/4.60.png" alt="UrConnect desktop interface">
 </div>
 ```
 
@@ -12,9 +12,9 @@ UrConnect is a desktop tool for spatial configuration analysis of urban street n
 
 ```{raw} html
 <div class="language-grid">
-  <a href="en/installation.html"><strong>English</strong><br>Installation, getting started, analysis guide, release builds.</a>
-  <a href="zh-CN/installation.html"><strong>简体中文</strong><br>安装、快速开始、分析指南、发布构建。</a>
-  <a href="zh-TW/installation.html"><strong>繁體中文</strong><br>安裝、快速開始、分析指南、發布構建。</a>
+  <a href="en/installation.html"><strong>English</strong><br>Installation, getting started, and analysis guide.</a>
+  <a href="zh-CN/installation.html"><strong>简体中文</strong><br>安装、快速开始和用户指南。</a>
+  <a href="zh-TW/installation.html"><strong>繁體中文</strong><br>安裝、快速開始和使用指南。</a>
 </div>
 ```
 
@@ -35,7 +35,6 @@ en/path-analysis
 en/visualization-file-management
 en/output-fields
 en/examples
-en/release-builds
 en/faq
 ```
 
@@ -47,7 +46,6 @@ zh-CN/installation
 zh-CN/getting-started
 zh-CN/user-guide
 zh-CN/output-fields
-zh-CN/release-builds
 zh-CN/faq
 ```
 
@@ -59,6 +57,5 @@ zh-TW/installation
 zh-TW/getting-started
 zh-TW/user-guide
 zh-TW/output-fields
-zh-TW/release-builds
 zh-TW/faq
 ```

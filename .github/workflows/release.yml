@@ -1,4 +1,4 @@
-name: Release Builds
+name: Release
 
 on:
   push:
@@ -21,12 +21,18 @@ jobs:
             os: windows-latest
             qt-arch: win64_msvc2019_64
             artifact: UrConnect-windows-x64
+            package-suffix: windows-x64
+            release-status: Primary Windows release
           - name: macos-arm64
             os: macos-14
             artifact: UrConnect-macos-arm64
+            package-suffix: macos-arm64-experimental
+            release-status: Experimental macOS build
           - name: linux-x64
             os: ubuntu-24.04
             artifact: UrConnect-linux-x64
+            package-suffix: linux-x64-experimental
+            release-status: Experimental Linux build
 
     steps:
       - uses: actions/checkout@v5
@@ -103,23 +109,33 @@ jobs:
         run: |
           cp LICENSE package/
           cp THIRD_PARTY_NOTICES.md package/
+          cat > package/README.txt <<EOF
+          UrConnect ${GITHUB_REF_NAME:-manual}
+          Platform: ${{ matrix.name }}
+          Status: ${{ matrix.release-status }}
+
+          Windows is the primary release target. macOS and Linux packages are experimental while packaging and UI validation continue.
+          EOF
 
       - name: Archive Windows package
         if: runner.os == 'Windows'
         shell: pwsh
-        run: Compress-Archive -Path package/* -DestinationPath "${{ matrix.artifact }}.zip"
+        run: |
+          $tag = "${env:GITHUB_REF_NAME}"
+          if ([string]::IsNullOrWhiteSpace($tag)) { $tag = "manual" }
+          Compress-Archive -Path package/* -DestinationPath "UrConnect-$tag-${{ matrix.package-suffix }}.zip"
 
       - name: Archive Unix package
         if: runner.os != 'Windows'
-        run: tar -czf "${{ matrix.artifact }}.tar.gz" -C package .
+        run: tar -czf "UrConnect-${GITHUB_REF_NAME:-manual}-${{ matrix.package-suffix }}.tar.gz" -C package .
 
       - name: Upload package artifact
         uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.artifact }}
           path: |
-            ${{ matrix.artifact }}.zip
-            ${{ matrix.artifact }}.tar.gz
+            UrConnect-*.zip
+            UrConnect-*.tar.gz
           if-no-files-found: ignore
 
   publish:
@@ -130,9 +146,24 @@ jobs:
       - uses: actions/download-artifact@v7
         with:
           path: artifacts
+      - name: Write release notes
+        run: |
+          cat > release-notes.md <<EOF
+          UrConnect ${GITHUB_REF_NAME}
+
+          Windows x64 is the primary release artifact for this version.
+
+          Experimental artifacts:
+          - macOS arm64
+          - Linux x64
+
+          The macOS and Linux builds use the same shared C++ analysis code as Windows, but remain marked experimental while packaging and UI validation continue.
+          EOF
       - name: Publish GitHub release
         uses: softprops/action-gh-release@v2
         with:
+          name: UrConnect ${{ github.ref_name }}
+          body_path: release-notes.md
           files: artifacts/**/*
-          draft: true
-          generate_release_notes: true
+          draft: false
+          prerelease: false
