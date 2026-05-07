@@ -42,8 +42,107 @@
 #include <algorithm>
 #include <string>
 #include <qstring>
-#include <windows.h>
 #include <thread>
+#ifdef _WIN32
+#include <windows.h>
+#else
+#include <chrono>
+#include <functional>
+#include <sys/stat.h>
+#include <type_traits>
+#if defined(__APPLE__)
+#include <sys/sysctl.h>
+#elif defined(__linux__)
+#include <unistd.h>
+#endif
+using DWORD = unsigned long;
+using DWORDLONG = unsigned long long;
+using HANDLE = void *;
+struct SYSTEM_INFO {
+	unsigned int dwNumberOfProcessors;
+};
+struct MEMORYSTATUSEX {
+	unsigned long dwLength;
+	DWORDLONG ullTotalPhys;
+	DWORDLONG ullAvailPhys;
+};
+struct POINT {
+	int x;
+	int y;
+};
+constexpr int SM_CXSCREEN = 0;
+constexpr int SM_CYSCREEN = 1;
+constexpr unsigned int MOUSEEVENTF_ABSOLUTE = 0x8000;
+constexpr unsigned int MOUSEEVENTF_LEFTDOWN = 0x0002;
+constexpr unsigned int MOUSEEVENTF_LEFTUP = 0x0004;
+inline void Sleep(unsigned int milliseconds)
+{
+	std::this_thread::sleep_for(std::chrono::milliseconds(milliseconds));
+}
+inline HANDLE GetCurrentThread()
+{
+	return nullptr;
+}
+inline DWORD GetCurrentThreadId()
+{
+	return static_cast<DWORD>(std::hash<std::thread::id>{}(std::this_thread::get_id()));
+}
+inline void GetSystemInfo(SYSTEM_INFO *systemInfo)
+{
+	systemInfo->dwNumberOfProcessors = std::max(1u, std::thread::hardware_concurrency());
+}
+inline bool GlobalMemoryStatusEx(MEMORYSTATUSEX *statex)
+{
+	DWORDLONG total = 8ULL * 1024ULL * 1024ULL * 1024ULL;
+#if defined(__APPLE__)
+	uint64_t memsize = 0;
+	size_t size = sizeof(memsize);
+	if (sysctlbyname("hw.memsize", &memsize, &size, nullptr, 0) == 0 && memsize > 0) {
+		total = static_cast<DWORDLONG>(memsize);
+	}
+#elif defined(__linux__)
+	long pages = sysconf(_SC_PHYS_PAGES);
+	long pageSize = sysconf(_SC_PAGE_SIZE);
+	if (pages > 0 && pageSize > 0) {
+		total = static_cast<DWORDLONG>(pages) * static_cast<DWORDLONG>(pageSize);
+	}
+#endif
+	statex->ullTotalPhys = total;
+	statex->ullAvailPhys = total / 2;
+	return true;
+}
+inline unsigned long long SetThreadAffinityMask(HANDLE, long long)
+{
+	return 0;
+}
+inline bool GetCursorPos(POINT *)
+{
+	return false;
+}
+inline bool SetCursorPos(int, int)
+{
+	return false;
+}
+inline void mouse_event(unsigned int, int, int, unsigned int, unsigned long)
+{
+}
+inline int GetSystemMetrics(int metric)
+{
+	return metric == SM_CYSCREEN ? 1080 : 1920;
+}
+template <typename A, typename B>
+inline typename std::common_type<A, B>::type min(A a, B b)
+{
+	typedef typename std::common_type<A, B>::type Result;
+	return a < b ? static_cast<Result>(a) : static_cast<Result>(b);
+}
+template <typename A, typename B>
+inline typename std::common_type<A, B>::type max(A a, B b)
+{
+	typedef typename std::common_type<A, B>::type Result;
+	return a > b ? static_cast<Result>(a) : static_cast<Result>(b);
+}
+#endif
 #include <iostream>
 #include <fstream>
 
@@ -4347,7 +4446,7 @@ void MainWindow::start_Multi_thread_for_calculate_DD(MainWindow* temp) {
 	SYSTEM_INFO si;
 	GetSystemInfo(&si);
 	int cpu_num = std::min((int)std::thread::hardware_concurrency(), (int)(si.dwNumberOfProcessors));
-	long long cpu_pos = long long(pow(2, cpu_num - 1));
+	long long cpu_pos = static_cast<long long>(pow(2, cpu_num - 1));
 
 	//反馈线程数目
 	//temp->summary_info += "calculation using "+ QString::number(cpu_num)+" threads\n";
@@ -4367,7 +4466,7 @@ void MainWindow::start_Multi_thread_for_calculate_DD(MainWindow* temp) {
 		cpu_pos = cpu_pos >> 1;
 		if (cpu_pos == 0)
 		{
-			cpu_pos = long long(pow(2, cpu_num - 1));
+			cpu_pos = static_cast<long long>(pow(2, cpu_num - 1));
 		}
 	}
 
@@ -4390,7 +4489,7 @@ void MainWindow::start_Multi_thread_for_calculate(MainWindow* temp)
 	SYSTEM_INFO si;
 	GetSystemInfo(&si);
 	int cpu_num = std::min((int)std::thread::hardware_concurrency(), (int)(si.dwNumberOfProcessors));
-	long long cpu_pos = long long(pow(2, cpu_num - 1));
+	long long cpu_pos = static_cast<long long>(pow(2, cpu_num - 1));
 
 	//按边顺序依次启动
 	for (int i = 0; i < thread_num; i++)
@@ -4400,7 +4499,7 @@ void MainWindow::start_Multi_thread_for_calculate(MainWindow* temp)
 		cpu_pos = cpu_pos >> 1;
 		if (cpu_pos == 0)
 		{
-			cpu_pos = long long(pow(2, cpu_num - 1));
+			cpu_pos = static_cast<long long>(pow(2, cpu_num - 1));
 		}
 	}
 
@@ -5142,19 +5241,19 @@ void MainWindow::start_Multi_thread_for_NetGeo(MainWindow* temp)
 	SYSTEM_INFO si;
 	GetSystemInfo(&si);
 	int cpu_num = std::min((int)std::thread::hardware_concurrency(), (int)(si.dwNumberOfProcessors));
-	long long cpu_pos = long long(pow(2, cpu_num - 1));
+	long long cpu_pos = static_cast<long long>(pow(2, cpu_num - 1));
 
 	//按顺序分组，因此起点路id为最小的
 	Calculation::stepDepthStartRoad = std::to_string(CAVec[0].subFromIDVec[0]);
 	//按边顺序依次启动
 	for (int i = 0; i < thread_num; i++)
 	{
-		std::thread thrd(&Calculation::MultiVisualize, &CAVec[i], temp->FA, cpu_pos);
+		std::thread thrd(&Calculation::MultiVisualize, &CAVec[i], std::ref(temp->FA), cpu_pos);
 		thrd.detach();
 		cpu_pos = cpu_pos >> 1;
 		if (cpu_pos == 0)
 		{
-			cpu_pos = long long(pow(2, cpu_num - 1));
+			cpu_pos = static_cast<long long>(pow(2, cpu_num - 1));
 		}
 	}
 
@@ -9290,7 +9389,7 @@ void MainWindow::addNetMapsAll(Calculation &CA, ShapeFileAccessor &FA) {
 		this->net_map_all[startRoad] = subNetMap;
 	}
 	//逐个NetReach通过addRow添加到Global地图中
-	for (auto& it = this->net_map_all.begin(); it != this->net_map_all.end(); it++) {
+	for (auto it = this->net_map_all.begin(); it != this->net_map_all.end(); it++) {
 		this->addNetMap(it->second);
 	}
 	////对起点线条单独设置
@@ -9343,7 +9442,7 @@ void MainWindow::addGeoMapsAll(Calculation &CA, ShapeFileAccessor &FA) {
 		this->geo_map_all[startRoad] = subGeoMap;
 	}
 	//逐个Geodesics通过addRow添加到Global地图中
-	for (auto& it = this->geo_map_all.begin(); it != this->geo_map_all.end(); it++) {
+	for (auto it = this->geo_map_all.begin(); it != this->geo_map_all.end(); it++) {
 		this->addGeoMap(it->second);
 	}
 	////对起点线条单独设置
@@ -9587,7 +9686,7 @@ void MainWindow::reDrawNetReach() {
 	emit(this->pDisplaydow->ui->Button_start_scan_4->clicked());
 
 	//逐个NetReach通过addRow添加到Global地图中
-	for (auto& it = this->net_map_all.begin(); it != this->net_map_all.end(); it++) {
+	for (auto it = this->net_map_all.begin(); it != this->net_map_all.end(); it++) {
 		this->addNetMap(it->second);
 	}
 	//for (auto it = NetFromIDs.begin(); it != NetFromIDs.end(); it++) {
@@ -9652,7 +9751,7 @@ void MainWindow::reDrawGeoReach() {
 	emit(this->pDisplaydow->ui->Button_start_scan_2->clicked());
 
 	//逐个NetReach通过addRow添加到Global地图中
-	for (auto& it = this->geo_map_all.begin(); it != this->geo_map_all.end(); it++) {
+	for (auto it = this->geo_map_all.begin(); it != this->geo_map_all.end(); it++) {
 		this->addGeoMap(it->second);
 	}
 	//for (auto it = GeoFromIDs.begin(); it != GeoFromIDs.end(); it++) {

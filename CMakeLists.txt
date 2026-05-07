@@ -33,6 +33,18 @@ include_directories(${CMAKE_BINARY_DIR})
 set(BOOST_ROOT "" CACHE PATH "Root directory of the Boost installation")
 set(QT5_ROOT "" CACHE PATH "Root directory of the Qt 5 installation")
 
+if(QT5_ROOT)
+    list(PREPEND CMAKE_PREFIX_PATH "${QT5_ROOT}")
+endif()
+
+if(BOOST_ROOT)
+    if(EXISTS "${BOOST_ROOT}/include/boost")
+        set(URCONNECT_BOOST_INCLUDE_DIR "${BOOST_ROOT}/include")
+    else()
+        set(URCONNECT_BOOST_INCLUDE_DIR "${BOOST_ROOT}")
+    endif()
+endif()
+
 # 版本信息生成
 if(EXISTS "${CMAKE_SOURCE_DIR}/.git")
     # Get the current working branch

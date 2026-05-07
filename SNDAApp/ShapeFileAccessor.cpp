@@ -867,7 +867,7 @@ void ShapeFileAccessor::Multi_thread_for_WriteFile(std::string filepath, Attribu
 	qFilePath.mkpath(QString::fromLocal8Bit(filepath.c_str()));
 
 	//增开一个detach线程写入shp文件,主线程不等待
-	std::thread thrd(&ShapeFileAccessor::multiWriteFile, filepath, filename, Attributes);
+	std::thread thrd(&ShapeFileAccessor::multiWriteFile, filepath, filename, std::ref(Attributes));
 	thrd.detach();
 }
 
@@ -919,7 +919,7 @@ void ShapeFileAccessor::Multi_thread_for_ReadFile(ShapeFileAccessor *temp, std::
 
 	//将线程跟CPU逻辑核心进行绑定，不允许出现线程切换
 	int cpu_num = int(si.dwNumberOfProcessors); 
-	long long cpu_pos = long long(pow(2, cpu_num - 1));
+	long long cpu_pos = static_cast<long long>(pow(2, cpu_num - 1));
 
 	//按边顺序依次启动
 	for (int i = 0; i < thread_num; i++)
@@ -930,7 +930,7 @@ void ShapeFileAccessor::Multi_thread_for_ReadFile(ShapeFileAccessor *temp, std::
 		cpu_pos = cpu_pos >> 1;
 		if (cpu_pos == 0)
 		{
-			cpu_pos = long long(pow(2, cpu_num - 1));
+			cpu_pos = static_cast<long long>(pow(2, cpu_num - 1));
 		}
 	}
 
@@ -993,7 +993,7 @@ void ShapeFileAccessor::multiThreadCalculateAngles(ShapeFileAccessor *temp) {
 	SYSTEM_INFO si;
 	GetSystemInfo(&si);
 	int cpu_num = int(si.dwNumberOfProcessors); 
-	long long cpu_pos = long long(pow(2, cpu_num - 1));
+	long long cpu_pos = static_cast<long long>(pow(2, cpu_num - 1));
 
 	//按边顺序依次启动
 	for (int i = 0; i < thread_num; i++)
@@ -1006,7 +1006,7 @@ void ShapeFileAccessor::multiThreadCalculateAngles(ShapeFileAccessor *temp) {
 		cpu_pos = cpu_pos >> 1;
 		if (cpu_pos == 0)
 		{
-			cpu_pos = long long(pow(2, cpu_num - 1));
+			cpu_pos = static_cast<long long>(pow(2, cpu_num - 1));
 		}
 	}
 
@@ -1247,7 +1247,7 @@ void ShapeFileAccessor::multiThreadJudgeAngles(ShapeFileAccessor *temp, double a
 	SYSTEM_INFO si;
 	GetSystemInfo(&si);
 	int cpu_num = int(si.dwNumberOfProcessors);
-	long long cpu_pos = long long(pow(2, cpu_num - 1));
+	long long cpu_pos = static_cast<long long>(pow(2, cpu_num - 1));
 
 	//按边顺序依次启动
 	for (int i = 0; i < thread_num; i++)
@@ -1259,7 +1259,7 @@ void ShapeFileAccessor::multiThreadJudgeAngles(ShapeFileAccessor *temp, double a
 		cpu_pos = cpu_pos >> 1;
 		if (cpu_pos == 0)
 		{
-			cpu_pos = long long(pow(2, cpu_num - 1));
+			cpu_pos = static_cast<long long>(pow(2, cpu_num - 1));
 		}
 	}
 
@@ -1362,12 +1362,12 @@ void ShapeFileAccessor::multiThreadProcessShapeFile(ShapeFileAccessor *temp, Att
 	SYSTEM_INFO si;
 	GetSystemInfo(&si);
 	int cpu_num = int(si.dwNumberOfProcessors);
-	long long cpu_pos = long long(pow(2, cpu_num - 1));
+	long long cpu_pos = static_cast<long long>(pow(2, cpu_num - 1));
 
 	//按边顺序依次启动
 	for (int i = 0; i < thread_num; i++)
 	{
-		std::thread thrd(&ShapeFileAccessor::thread_process_attributes, temp, Attributes, i, StartPosVec[i], ReadLengthVec[i], cpu_pos);
+		std::thread thrd(&ShapeFileAccessor::thread_process_attributes, temp, std::ref(Attributes), i, StartPosVec[i], ReadLengthVec[i], cpu_pos);
 		thrd.detach();
 
 		//设置用哪个CPU核心处理该线程			
@@ -1375,7 +1375,7 @@ void ShapeFileAccessor::multiThreadProcessShapeFile(ShapeFileAccessor *temp, Att
 		cpu_pos = cpu_pos >> 1;
 		if (cpu_pos == 0)
 		{
-			cpu_pos = long long(pow(2, cpu_num - 1));
+			cpu_pos = static_cast<long long>(pow(2, cpu_num - 1));
 		}
 	}
 

@@ -519,7 +519,7 @@ private:
     // Selection
     bool isSelected() const { return m_selection; }
     bool setCurSel(QtRegion &r, bool add = false);
-	bool ShapeMap::setCurSel_my_define(QtRegion &r, bool add, std::vector<int> &Ref_number_list);
+		bool setCurSel_my_define(QtRegion &r, bool add, std::vector<int> &Ref_number_list);
     bool setCurSel(const std::vector<int> &selset, bool add = false);
     bool setCurSelDirect(const std::vector<int> &selset, bool add = false);
     float getDisplayedSelectedAvg();

@@ -13,14 +13,14 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC_SEARCH_PATHS ${CMAKE_CURRENT_SOURCE_DIR}/UI)
 
 # 包含目录
-include_directories(${BOOST_ROOT})
+include_directories(${URCONNECT_BOOST_INCLUDE_DIR})
 include_directories(${CMAKE_SOURCE_DIR}/SNDAApp)
 
 # 链接目录
 link_directories(${CMAKE_SOURCE_DIR}/SNDAApp/lib)
 
 # 查找依赖
-find_package(Qt5 COMPONENTS Core Widgets Gui OpenGL REQUIRED PATHS ${QT5_ROOT})
+find_package(Qt5 COMPONENTS Core Widgets Gui OpenGL REQUIRED)
 find_package(OpenGL REQUIRED)
 
 # 编译定义
@@ -29,10 +29,10 @@ add_compile_definitions(_DEPTHMAP)
 # 源文件列表
 set(SOURCES
     ../SNDAApp/Calculation.cpp
-    ../SNDAApp/SHAPEFILE.CPP
-    ../SNDAApp/SHAPEFILEACCESSOR.CPP
-    ../SNDAApp/STDAFX.CPP
-    ../SNDAApp/SHAPEOBJECT.CPP
+    ../SNDAApp/Shapefile.cpp
+    ../SNDAApp/ShapeFileAccessor.cpp
+    ../SNDAApp/stdafx.cpp
+    ../SNDAApp/ShapeObject.cpp
     AttributesWin.cpp
     qcolordialogbutton.cpp
     GraphDoc.cpp
@@ -44,14 +44,14 @@ set(SOURCES
     mainwindowfactory.cpp
     settingsimpl.cpp
     CalculateUI.cpp
-    Display.CPP
-    geomap.CPP
-    globalmap.CPP
+    Display.cpp
+    GeoMap.cpp
+    GlobalMap.cpp
     message.cpp
     Highlight.cpp
-    netmap.CPP
-    newwindow.CPP
-    scaleWin.cpp
+    NetMap.cpp
+    newwindow.cpp
+    ScaleWin.cpp
     Select.cpp
     setForm.cpp
     Subset.cpp
@@ -128,7 +128,7 @@ set(UI_FILES
     UI/CalculateUI.ui
     UI/Highlight.ui
     UI/newwindow.ui
-    UI/scaleWin.ui
+    UI/ScaleWin.ui
     UI/Select.ui
     UI/setForm.ui
     UI/Subset.ui

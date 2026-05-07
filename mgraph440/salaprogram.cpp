@@ -37,6 +37,7 @@
 #include <mgraph440/ngraph.h>
 #include "mgraph440/pafmath.h"
 
+#include <cmath>
 #include <math.h>
 #include <float.h>
 #include <time.h>
@@ -297,7 +298,7 @@ bool SalaProgram::runupdate(int col, const std::set<int> &selset)
 #if defined(_MSC_VER)
             if (!_finite(v)) {
 #else
-            if (!finite(v)) {
+            if (!std::isfinite(v)) {
 #endif
                v = -1.0f;
             }
@@ -320,7 +321,7 @@ bool SalaProgram::runupdate(int col, const std::set<int> &selset)
 #if defined(_MSC_VER)
             if (!_finite(v)) {
 #else
-            if (!finite(v)) {
+            if (!std::isfinite(v)) {
 #endif
                v = -1.0f;
             }

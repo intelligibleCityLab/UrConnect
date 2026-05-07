@@ -1,0 +1,36 @@
+.urconnect-hero {
+  margin: 1.25rem 0 1.75rem;
+  border: 1px solid var(--color-background-border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.urconnect-hero img {
+  display: block;
+  width: 100%;
+}
+
+.language-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+  margin: 1rem 0 1.5rem;
+}
+
+.language-grid a {
+  border: 1px solid var(--color-background-border);
+  border-radius: 8px;
+  display: block;
+  padding: 1rem;
+  text-decoration: none;
+}
+
+.field-table td,
+.field-table th {
+  vertical-align: top;
+}
+
+figure img {
+  border: 1px solid var(--color-background-border);
+  border-radius: 6px;
+}

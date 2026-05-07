@@ -1,72 +1,68 @@
-# UrConnect
+<p align="center">
+  <img src="docs/source/_static/images/guide/4.32.png" alt="UrConnect 软件界面" width="900">
+</p>
 
-UrConnect 是一个面向城市街道网络的独立空间组构分析工具。项目基于 depthmapX 开发，并扩展了 UrbanConnect 分析方法：以可达量（reach）和转向距离（directional distance）为核心，将拓扑距离、米制距离以及街道长度、负载等 GIS 属性共同纳入分析。
+<h1 align="center">UrConnect</h1>
 
-默认英文说明见 [README.md](README.md)。
+<p align="center">
+  面向城市街道网络的空间组构分析工具，基于 depthmapX，并扩展可达量、转向距离、加权可达性和路径分析工作流。
+</p>
 
-## 功能概览
+<p align="center">
+  <a href="https://github.com/intelligibleCityLab/UrConnect/actions/workflows/docs.yml"><img src="https://github.com/intelligibleCityLab/UrConnect/actions/workflows/docs.yml/badge.svg" alt="Docs build"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0--or--later-0f766e" alt="GPL-3.0-or-later license"></a>
+  <img src="https://img.shields.io/badge/C%2B%2B-11-00599C" alt="C++11">
+  <img src="https://img.shields.io/badge/Qt-5.15-41CD52" alt="Qt 5.15">
+</p>
 
-- 支持城市形态和街道网络研究中的桌面端空间网络分析流程。
-- 支持 Shapefile 等 GIS 数据格式，便于与其他城市数据叠合分析。
-- 保留 depthmapX 风格的图分析、线段分析、可视分析和地图分析能力。
-- 增加 UrbanConnect 指标，使结果更便于设计、规划和案例比较。
+<p align="center">
+  <a href="README.md">English</a> |
+  <a href="README.zh-TW.md">繁體中文</a> |
+  <a href="docs/source/zh-CN/installation.md">安装</a> |
+  <a href="docs/source/zh-CN/getting-started.md">快速开始</a> |
+  <a href="docs/source/zh-CN/user-guide.md">用户指南</a>
+</p>
 
-## 项目结构
+## 简介
 
-```text
-.
-├── depthmapX/        Qt 桌面应用、视图、对话框、资源和 UI 文件
-├── salalib/          核心空间分析算法以及图/地图数据结构
-├── genlib/           几何、数学、解析和通用工具代码
-├── mgraph440/        为兼容保留的旧版图分析代码
-├── SNDAApp/          UrbanConnect 分析代码以及随项目携带的 Shapelib 源码
-├── docs/             项目文档
-└── .github/          GitHub issue、PR 和项目维护模板
-```
+UrConnect 是一个面向线段化街道网络的桌面分析工具。它将拓扑距离、米制距离和街道属性数据结合起来，可用于城市形态、街道网络、POI、人口、建筑面积等多源数据分析。
 
-当前仓库包含 C++ 桌面应用及其随项目构建的内部库。主程序目标位于 `depthmapX/`。
+主要能力包括：
 
-## 构建
-
-UrConnect 目前需要从源码构建。
-
-### 依赖
-
-- CMake 3.13 或更新版本
-- 支持 C++11 的编译器
-- Qt 5.15.x，并包含 Core、Gui、Widgets、OpenGL 模块
-- Boost 头文件
-- OpenGL
-
-目前项目主要面向 Windows/MSVC 构建；其他平台可能需要少量 CMake 或依赖配置调整。
-
-### Windows 构建示例
-
-安装 Visual Studio、CMake、Qt 5 和 Boost 后，显式指定依赖路径：
-
-```powershell
-cmake -S . -B build -G "Visual Studio 17 2022" -A x64 `
-  -DQT5_ROOT="D:/program/QT/5.15.2/msvc2019_64" `
-  -DBOOST_ROOT="D:/program/boost_1_73_0"
-cmake --build build --config Release
-```
-
-可执行文件会生成在 `build/bin/Release/` 下。
+- 米制、转向、交叉口和组合可达量分析
+- 针对所选线段的交互式可达量分析
+- 转向距离、交叉口距离和点距离分析
+- 手工 OD 或 OD 矩阵的最短路径模拟
+- 色谱可视化、屏幕导出、属性导出和 Shapefile 结果写入
 
 ## 文档
 
-更多架构、构建、开发和发布准备说明见 [docs/README.zh-CN.md](docs/README.zh-CN.md)。
+文档采用类似 OSMnx 的 ReadTheDocs/Sphinx 风格，包含英文、简体中文和繁体中文三个入口：
 
-## 引用
+- [英文文档](docs/source/en/installation.md)
+- [简体中文文档](docs/source/zh-CN/installation.md)
+- [繁体中文文档](docs/source/zh-TW/installation.md)
 
-如果在学术研究中使用 UrConnect，请引用本项目。机器可读的引用信息见 [CITATION.cff](CITATION.cff)。仓库公开前应补充正式论文、作者、DOI 等信息。
+本地构建文档：
+
+```bash
+python3 -m pip install -r docs/requirements.txt
+sphinx-build -b html docs/source docs/_build/html
+```
+
+## 安装与构建
+
+项目计划通过 GitHub Releases 提供 Windows、macOS 和 Linux 编译包。Windows/MSVC 是历史上最成熟路径；macOS 已经在本机用 Homebrew Qt 5 和 Boost 通过 Release 构建；Linux 在 CI 完全稳定前作为预览目标。
+
+源码构建示例：
+
+```bash
+cmake -S . -B build -DQT5_ROOT=/path/to/Qt/5.15 -DBOOST_ROOT=/path/to/boost
+cmake --build build --config Release
+```
+
+更多平台命令见 [安装文档](docs/source/zh-CN/installation.md)。
 
 ## 许可证
 
-UrConnect 使用 GNU General Public License v3.0 开源，详见 [LICENSE](LICENSE)。
-
-这是目前最稳妥且正确的许可证选择，因为 UrConnect 派生自带有 GPLv3-or-later 许可声明的 depthmapX/sala 组件。项目中还包含若干兼容许可的第三方组件，例如 LGPL 的 genlib 代码，以及 MIT-style 或 LGPL 双许可的 Shapelib 代码。详见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
-
-## 致谢
-
-UrConnect 基于 depthmapX 及其相关 sala/genlib 组件开发。感谢 depthmapX、sala、genlib、Shapelib 的原始贡献者，以及来自深圳大学和佐治亚理工学院等机构、参与 UrbanConnect 方法开发的研究合作者。
+UrConnect 使用 GNU General Public License v3.0 or later。由于项目派生自带 GPLv3-or-later 声明的 depthmapX/sala 组件，这是当前最稳妥的许可证选择。第三方组件说明见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。

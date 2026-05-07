@@ -15,7 +15,11 @@ namespace ViewHelpers {
         time_t now = time(NULL);
         char timeString[11];
         struct tm timeinfo;
+#ifdef _WIN32
         localtime_s(&timeinfo, &now);
+#else
+        localtime_r(&now, &timeinfo);
+#endif
         strftime(timeString, 11, "%Y/%m/%d", &timeinfo);
         return timeString;
     }

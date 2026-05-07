@@ -383,7 +383,7 @@ public:
 };
 
 template<typename T>
-class MetricDistanceFunction: public DistanceFunction<typename T> {
+class MetricDistanceFunction: public DistanceFunction<T> {
 public:
 	MetricDistanceFunction(const ShapeFileAccessor& fileAccessor)
 		: fileAccessor(fileAccessor) {}
@@ -406,7 +406,7 @@ private:
 };
 
 template<typename T>
-class DirectionDistanceFunction : public DistanceFunction<typename T> {
+class DirectionDistanceFunction : public DistanceFunction<T> {
 public:
 	DirectionDistanceFunction(const ShapeFileAccessor& fileAccessor)
 		: fileAccessor(fileAccessor) {}
@@ -426,10 +426,10 @@ private:
 };
 
 template<typename T>
-class PartDirectionDistanceFunction : public DirectionDistanceFunction<typename T> {
+class PartDirectionDistanceFunction : public DirectionDistanceFunction<T> {
 public:
 	PartDirectionDistanceFunction(const ShapeFileAccessor& fileAccessor, const std::set<int>& validRoads)
-		: DirectionDistanceFunction<typename T>(fileAccessor),fileAccessor(fileAccessor),validRoads(validRoads) {}
+		: DirectionDistanceFunction<T>(fileAccessor),fileAccessor(fileAccessor),validRoads(validRoads) {}
 
 	std::set<int> getConnectedRoads(int startRoad ,int road) {
 		std::set<int> connectedRoads=fileAccessor.AdjRoadList.find(road)->second;

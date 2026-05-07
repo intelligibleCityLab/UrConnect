@@ -34,7 +34,10 @@
 #include <time.h>
 #include <unordered_map>
 #include <unordered_set>
+
+#ifdef _WIN32
 #include <Windows.h>
+#endif
 
 #ifndef _WIN32
 #define _finite finite

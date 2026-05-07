@@ -14,15 +14,34 @@
 //#include <boost/filesystem.hpp>
 //namespace bf = boost::filesystem;
 #include <QFile>
+#ifdef _WIN32
 #include <Windows.h>
+#else
+#include <chrono>
+#include <QDir>
+#endif
 #include <cmath>
+#include <codecvt>
 #include <cstdio>
+#include <locale>
 #include <numeric>
 #include <queue>
 #include <tuple>
 #include <thread>
 #include <limits>
 #include "CSVProcess.h"
+
+#ifndef _WIN32
+inline void Sleep(unsigned int milliseconds)
+{
+    std::this_thread::sleep_for(std::chrono::milliseconds(milliseconds));
+}
+
+inline bool CreateDirectory(const char *path, void *)
+{
+	return QDir().mkpath(QString::fromLocal8Bit(path));
+}
+#endif
 
 int Calculation::subset_finishedCount;
 std::vector<bool> Calculation::FinishedVec;
@@ -9564,25 +9583,14 @@ void Calculation::OutputData(ShapeFileAccessor &fileAccessor)
 
 std::wstring StringToWString(const std::string& str)
 {
-	int num = MultiByteToWideChar(CP_UTF8, 0, str.c_str(), -1, NULL, 0);
-	wchar_t *wide = new wchar_t[num];
-	MultiByteToWideChar(CP_UTF8, 0, str.c_str(), -1, wide, num);
-	std::wstring w_str(wide);
-	delete[] wide;
-	return w_str;
+	std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+	return converter.from_bytes(str);
 }
 
 std::string WStringToString(const std::wstring &wstr)
 {
-	std::string str;
-	int nLen = (int)wstr.length();
-	str.resize(nLen, ' ');
-	int nResult = WideCharToMultiByte(CP_ACP, 0, (LPCWSTR)wstr.c_str(), nLen, (LPSTR)str.c_str(), nLen, NULL, NULL);
-	if (nResult == 0)
-	{
-		return "";
-	}
-	return str;
+	std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+	return converter.to_bytes(wstr);
 }
 
 inline std::string getFromToStr(std::string searchLimitStr) {
@@ -11668,22 +11676,22 @@ void Calculation::calculate_subset_3(ShapeFileAccessor &fileAccessor, subsetPara
 
 	//拉起三个运算线程，分别计算不同定义下的最短路径
 	if (para.isMR) {
-		std::thread thrd_1(&Calculation::calculateMR_subset, this, fileAccessor);	//不受限制，计算每个起点线的平均mr
+		std::thread thrd_1(&Calculation::calculateMR_subset, this, std::ref(fileAccessor));	//不受限制，计算每个起点线的平均mr
 		thrd_1.detach();
 	}
 
 	if (para.isDR) {
-		std::thread thrd_2(&Calculation::calculateDR_subset, this, fileAccessor);	//不受限制，计算每个起点线的dd、ddl
+		std::thread thrd_2(&Calculation::calculateDR_subset, this, std::ref(fileAccessor));	//不受限制，计算每个起点线的dd、ddl
 		thrd_2.detach();
 	}
 
 	if (para.isJnR) {
-		std::thread thrd_3(&Calculation::calculateJncR_subset, this, fileAccessor);	//不受限制，计算每个起点线的平均jnc
+		std::thread thrd_3(&Calculation::calculateJncR_subset, this, std::ref(fileAccessor));	//不受限制，计算每个起点线的平均jnc
 		thrd_3.detach();
 	}
 
 	//汇总数据，存入results
-	std::thread thrd_4(&Calculation::ouput_subset_3, this, fileAccessor);
+	std::thread thrd_4(&Calculation::ouput_subset_3, this, std::ref(fileAccessor));
 	thrd_4.detach();
 }
 
@@ -11724,13 +11732,13 @@ void Calculation::calculate_subset_1(ShapeFileAccessor &fileAccessor, subsetPara
 	subset_finishedCount = 0;
 	needProcessCount = 3 * subsetIDs.size();
 
-	std::thread thrd_1(&Calculation::get_nearest_distance_to_subset, this, fileAccessor, para, subsetIDs);
+	std::thread thrd_1(&Calculation::get_nearest_distance_to_subset, this, std::ref(fileAccessor), std::ref(para), std::ref(subsetIDs));
 	thrd_1.detach();
 
-	std::thread thrd_2(&Calculation::get_subset_collective_reach, this, fileAccessor, para, subsetIDs);
+	std::thread thrd_2(&Calculation::get_subset_collective_reach, this, std::ref(fileAccessor), std::ref(para), std::ref(subsetIDs));
 	thrd_2.detach();
 
-	std::thread thrd_3(&Calculation::get_members_within_subset, this, fileAccessor, para, subsetIDs);
+	std::thread thrd_3(&Calculation::get_members_within_subset, this, std::ref(fileAccessor), std::ref(para), std::ref(subsetIDs));
 	thrd_3.detach();
 }
 
@@ -12990,10 +12998,10 @@ void Calculation::calculate_subset_2(ShapeFileAccessor &fileAccessor, subsetPara
 	//因为两组数据互相针对，实际计算数目是2倍
 	needProcessCount *= 2;
 
-	std::thread thrd_1(&Calculation::get_members_between_subsets, this, fileAccessor, para, SubsetIDs);
+	std::thread thrd_1(&Calculation::get_members_between_subsets, this, std::ref(fileAccessor), std::ref(para), std::ref(SubsetIDs));
 	thrd_1.detach();
 
-	std::thread thrd_2(&Calculation::get_nearest_distance_to_other_subsets, this, fileAccessor, para, SubsetIDs);
+	std::thread thrd_2(&Calculation::get_nearest_distance_to_other_subsets, this, std::ref(fileAccessor), std::ref(para), std::ref(SubsetIDs));
 	thrd_2.detach();
 }
 

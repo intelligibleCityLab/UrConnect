@@ -327,11 +327,13 @@ void GLView::paintGL()
 	glEnd();
 
 	//比例尺
+#ifdef _WIN32
 	setFont(QFont("Times", 6));
 	wglUseFontBitmaps(wglGetCurrentDC(), 0, 256, 1000);
 	glListBase(1000);
 	glRasterPos3f(-0.94f, -0.98f, 0.0f);
 	glCallLists(static_cast<GLsizei>(scale_str.size()), GL_UNSIGNED_BYTE, scale_str.c_str());
+#endif
 
 	//刷新缓冲，保证绘图命令能被执行
 	glFlush();
