@@ -1,6 +1,8 @@
 ﻿#include "stdafx.h"
 #include "ShapeObject.h"
 
+#include <cstring>
+
 
 ShapeObject::ShapeObject()
 	: index(-1)
@@ -108,7 +110,7 @@ void ShapeObject::Assign(const ShapeObject& other)
 		vertexCount = other.vertexCount;
 		if (vertexCount > 0) {
 			vertices = new sPoint<double>[vertexCount];
-			memcpy(vertices, other.vertices, other.vertexCount * sizeof(sPoint<double>));
+			std::memcpy(vertices, other.vertices, other.vertexCount * sizeof(sPoint<double>));
 		}
 		bounds = other.bounds;
 		parts = other.parts;
