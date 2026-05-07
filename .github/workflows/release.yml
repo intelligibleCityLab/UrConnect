@@ -79,16 +79,20 @@ jobs:
         run: |
           if [ "$RUNNER_OS" = "Windows" ]; then
             QT5_ROOT="${{ steps.qt.outputs.dir }}"
+            CMAKE_EXTRA_ARGS=()
           elif [ "$RUNNER_OS" = "macOS" ]; then
             QT5_ROOT="$(brew --prefix qt@5)"
             BOOST_ROOT="$(brew --prefix boost)"
+            CMAKE_EXTRA_ARGS=()
           else
             QT5_ROOT=""
             BOOST_ROOT="/usr/include"
+            CMAKE_EXTRA_ARGS=(-DCMAKE_CXX_FLAGS_RELEASE="-O2 -DNDEBUG")
           fi
-          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DQT5_ROOT="${QT5_ROOT}" -DBOOST_ROOT="${BOOST_ROOT}"
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DQT5_ROOT="${QT5_ROOT}" -DBOOST_ROOT="${BOOST_ROOT}" "${CMAKE_EXTRA_ARGS[@]}"
 
       - name: Build
+        timeout-minutes: 45
         run: cmake --build build --config Release --parallel
 
       - name: Deploy Qt runtime on Windows
