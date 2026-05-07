@@ -41,7 +41,7 @@
 
 #include <algorithm>
 #include <string>
-#include <qstring>
+#include <QString>
 #include <thread>
 #ifdef _WIN32
 #include <windows.h>
