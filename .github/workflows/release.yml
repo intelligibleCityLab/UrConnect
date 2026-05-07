@@ -95,7 +95,19 @@ jobs:
         if: runner.os == 'macOS'
         run: |
           mkdir -p package
-          cp -R build/bin/depthmapX.app package/
+          app_path=""
+          for candidate in build/bin/depthmapX.app build/bin/Release/depthmapX.app; do
+            if [ -d "$candidate" ]; then
+              app_path="$candidate"
+              break
+            fi
+          done
+          if [ -z "$app_path" ]; then
+            echo "depthmapX.app was not found under build/bin"
+            find build/bin -maxdepth 3 -print || true
+            exit 1
+          fi
+          cp -R "$app_path" package/
           macdeployqt package/depthmapX.app -always-overwrite
 
       - name: Package Linux executable
