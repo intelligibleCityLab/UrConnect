@@ -2,6 +2,14 @@
 
 UrConnect uses a panel-based layout instead of a menu-heavy workflow. Most actions are grouped into collapsible single-choice panels.
 
+## UrConnect Workspace
+
+```{figure} ../_static/images/guide/4.32.png
+:alt: UrConnect software interface
+
+Figure 4.32 UrConnect software interface: 1. tools and data management panel; 2. calculation options and parameter panel; 3. data visualization panel; 4. calculation result summary area; 5. map workspace; 6. map data attribute panel.
+```
+
 ## Main Areas
 
 Tool and data panel

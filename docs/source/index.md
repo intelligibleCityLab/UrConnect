@@ -4,7 +4,7 @@ UrConnect is a desktop tool for spatial configuration analysis of urban street n
 
 ```{raw} html
 <div class="urconnect-hero">
-  <img src="_static/images/guide/4.60.png" alt="UrConnect desktop interface">
+  <img src="_static/images/guide/4.32.png" alt="UrConnect desktop interface">
 </div>
 ```
 
@@ -20,7 +20,7 @@ UrConnect is a desktop tool for spatial configuration analysis of urban street n
 
 ## Documentation Structure
 
-The English documentation is the default and most complete reference. The Simplified Chinese and Traditional Chinese sections mirror the main workflow and terminology for users reading Chinese.
+The English, Simplified Chinese, and Traditional Chinese sections cover the same workflow, sections, and figures.
 
 ```{toctree}
 :maxdepth: 2
@@ -44,8 +44,13 @@ en/faq
 
 zh-CN/installation
 zh-CN/getting-started
-zh-CN/user-guide
+zh-CN/user-interface
+zh-CN/analysis-reach
+zh-CN/analysis-distance
+zh-CN/path-analysis
+zh-CN/visualization-file-management
 zh-CN/output-fields
+zh-CN/examples
 zh-CN/faq
 ```
 
@@ -55,7 +60,19 @@ zh-CN/faq
 
 zh-TW/installation
 zh-TW/getting-started
-zh-TW/user-guide
+zh-TW/user-interface
+zh-TW/analysis-reach
+zh-TW/analysis-distance
+zh-TW/path-analysis
+zh-TW/visualization-file-management
 zh-TW/output-fields
+zh-TW/examples
 zh-TW/faq
+```
+
+```{toctree}
+:hidden:
+
+zh-CN/user-guide
+zh-TW/user-guide
 ```

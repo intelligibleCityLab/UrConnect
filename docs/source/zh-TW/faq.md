@@ -2,7 +2,7 @@
 
 ## UrConnect 只能在 Windows 上執行嗎？
 
-不是。工程已有 Windows、macOS、Linux 構建分支。Windows 最成熟；macOS 已在本機用 Qt 5 和 Boost 進入編譯；Linux 需要在 CI 中繼續驗證。
+不是。Windows 是 v0.1.0 的主要發布目標，macOS/Linux 包以 experimental 構建形式提供。核心分析程式碼在各平台共享；experimental 標籤反映的是打包和驗證狀態。
 
 ## 軟體能編輯街道線網嗎？
 
@@ -11,3 +11,11 @@
 ## 應該使用 Shapefile 還是 CSV/TXT？
 
 需要 GIS 相容時使用 Shapefile；需要保留較長欄位名時使用 CSV/TXT，因為 Shapefile 欄位名最長只有 10 個字元。
+
+## 為什麼屬性欄不顯示文字欄位？
+
+屬性欄主要用於分析和視覺化，因此只顯示數值型欄位。
+
+## 可以一次執行多個半徑嗎？
+
+部分全源分析支援逗號分隔的多個半徑，例如 `500,1000,n`。角度閾值通常不支援在同一次執行中輸入多個值。
