@@ -1,11 +1,11 @@
 <p align="center">
-  <img src="docs/source/_static/images/guide/4.60.png" alt="UrConnect 软件界面" width="900">
+  <img src="docs/source/_static/images/guide/4.60.png" alt="UrConnect 上海加权可达量分析" width="900">
 </p>
 
 <h1 align="center">UrConnect</h1>
 
 <p align="center">
-  面向城市街道网络的空间组构分析工具，基于 depthmapX，并扩展可达量、转向距离、加权可达性和路径分析工作流。
+  面向线段化城市街道网络的创新空间组构分析工具，提出 UrConnect 的可达量、转向距离、加权可达性和路径分析算法。
 </p>
 
 <p align="center">
@@ -59,3 +59,7 @@ cmake --build build --config Release
 ## 许可证
 
 UrConnect 使用 GNU General Public License v3.0 or later。第三方组件说明见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
+
+## 致谢
+
+UrConnect 使用了 depthmapX、sala、genlib 和 Shapelib 的开源组件，用于桌面程序、地图、数据和 Shapefile 基础设施。软件的核心分析贡献是 UrConnect 可达量、距离、加权和路径分析算法体系，该方法由深圳大学和 Georgia Institute of Technology 的研究合作者共同发展。

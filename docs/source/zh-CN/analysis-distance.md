@@ -67,7 +67,7 @@ Weighted Distance 结果。
 
 ## 点距离
 
-Point Distance 类似 depthmap 中的 Step Depth。它计算一个所选线段到所有其他线段的距离。
+Point Distance 计算一个所选线段到所有其他线段的距离。
 
 ```{figure} ../_static/images/guide/4.51.png
 :alt: Point Distance 参数

@@ -1,11 +1,11 @@
 <p align="center">
-  <img src="docs/source/_static/images/guide/4.60.png" alt="UrConnect desktop interface" width="900">
+  <img src="docs/source/_static/images/guide/4.60.png" alt="Shanghai weighted reach analysis in UrConnect" width="900">
 </p>
 
 <h1 align="center">UrConnect</h1>
 
 <p align="center">
-  Spatial configuration analysis for urban street networks, based on depthmapX and extended with reach, directional distance, weighted accessibility, and path-analysis workflows.
+  An innovative spatial configuration analysis tool for segment-based urban street networks, introducing UrConnect algorithms for reach, directional distance, weighted accessibility, and path analysis.
 </p>
 
 <p align="center">
@@ -66,7 +66,7 @@ See the [Installation guide](https://intelligiblecitylab.github.io/UrConnect/en/
 ├── salalib/          Core spatial analysis algorithms and graph/map data structures
 ├── genlib/           Shared geometry, math, parsing, and utility code
 ├── mgraph440/        Legacy graph-analysis code retained for compatibility
-├── SNDAApp/          UrbanConnect analysis code and bundled Shapelib sources
+├── SNDAApp/          UrConnect analysis code and bundled Shapelib sources
 ├── docs/             Sphinx documentation in English, Simplified Chinese, Traditional Chinese
 └── .github/          Issue templates and GitHub Actions workflows
 ```
@@ -81,4 +81,4 @@ UrConnect is licensed under the GNU General Public License v3.0 or later. Third-
 
 ## Acknowledgements
 
-UrConnect builds on depthmapX, sala, genlib, and Shapelib. We thank the original contributors and the research collaborators from Shenzhen University and Georgia Institute of Technology who developed the UrbanConnect methods.
+UrConnect incorporates open-source components from depthmapX, sala, genlib, and Shapelib for desktop, map, data, and Shapefile infrastructure. Its core analytical contribution is the UrConnect algorithm suite for reach, distance, weighting, and path analysis, developed with research collaborators from Shenzhen University and Georgia Institute of Technology.

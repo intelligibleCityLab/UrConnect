@@ -67,7 +67,7 @@ Weighted Distance result.
 
 ## Point Distance
 
-Point Distance is similar to Step Depth in depthmap. It computes the distance from one selected segment to every other segment.
+Point Distance computes the distance from one selected segment to every other segment.
 
 ```{figure} ../_static/images/guide/4.51.png
 :alt: Point Distance parameters

@@ -1,6 +1,6 @@
 # UrConnect Documentation
 
-UrConnect is a desktop tool for spatial configuration analysis of urban street networks. It extends depthmapX-style workflows with reach, directional distance, junction distance, weighted accessibility, point distance, and shortest-path analysis for segment-based street models.
+UrConnect is an innovative desktop tool for spatial configuration analysis of segment-based urban street networks. Its core contribution is an UrConnect algorithm suite for reach, directional distance, junction distance, weighted accessibility, point distance, and shortest-path analysis.
 
 ```{raw} html
 <div class="urconnect-hero">

@@ -6,7 +6,7 @@ authors:
   - name: "Intelligible City Lab"
 repository-code: "https://github.com/intelligibleCityLab/UrConnect"
 license: "GPL-3.0-or-later"
-abstract: "UrConnect is a standalone spatial configuration analysis tool for urban street networks, extending depthmapX-style workflows with UrbanConnect reach and directional-distance measures."
+abstract: "UrConnect is a standalone spatial configuration analysis tool for segment-based urban street networks, introducing UrConnect algorithms for reach, directional distance, weighted accessibility, and path analysis."
 keywords:
   - spatial-analysis
   - urban-planning
