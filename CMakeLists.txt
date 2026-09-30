@@ -1,5 +1,8 @@
 ﻿# UrConnect 项目构建配置
 cmake_minimum_required(VERSION 3.13.0)
+if(POLICY CMP0091)
+    cmake_policy(SET CMP0091 NEW)
+endif()
 project(UrConnect VERSION 0.2.0)
 
 include(CTest)
@@ -77,11 +80,6 @@ string(TIMESTAMP APP_DATE %Y-%m-%d)
 
 # 生成版本头文件
 configure_file("${CMAKE_SOURCE_DIR}/version_defs.h.in" "${CMAKE_BINARY_DIR}/version_defs.h" @ONLY)
-
-if(MSVC)
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT")
-    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MT")
-endif()
 
 # Shapelib and the CLI can be built without Qt for headless CI and servers.
 add_subdirectory(SNDAApp/lib)

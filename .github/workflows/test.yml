@@ -58,3 +58,11 @@ jobs:
 
       - name: Test
         run: ctest --test-dir build -C Release --output-on-failure
+
+      - name: Build Windows Debug
+        if: runner.os == 'Windows'
+        run: cmake --build build --config Debug --parallel --target urconnect-cli urconnect-test-network
+
+      - name: Test Windows Debug
+        if: runner.os == 'Windows'
+        run: ctest --test-dir build -C Debug --output-on-failure

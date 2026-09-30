@@ -19,7 +19,6 @@ jobs:
         include:
           - name: windows-x64
             os: windows-latest
-            qt-arch: win64_msvc2019_64
             artifact: UrConnect-cli-windows-x64
             package-suffix: windows-x64
             release-status: Standalone Windows CLI
@@ -46,14 +45,6 @@ jobs:
             echo "Release tag $GITHUB_REF_NAME does not match UrConnect version $code_version"
             exit 1
           fi
-
-      - name: Install Qt
-        if: runner.os == 'Windows'
-        id: qt
-        uses: jurplel/install-qt-action@v4
-        with:
-          version: "5.15.2"
-          arch: ${{ matrix.qt-arch }}
 
       - name: Install Windows dependencies
         if: runner.os == 'Windows'
@@ -88,8 +79,8 @@ jobs:
         shell: bash
         run: |
           if [ "$RUNNER_OS" = "Windows" ]; then
-            QT5_ROOT="${{ steps.qt.outputs.dir }}"
-            CMAKE_EXTRA_ARGS=()
+            QT5_ROOT=""
+            CMAKE_EXTRA_ARGS=(-DURCONNECT_BUILD_GUI=OFF)
           elif [ "$RUNNER_OS" = "macOS" ]; then
             QT5_ROOT="$(brew --prefix qt@5)"
             BOOST_ROOT="$(brew --prefix boost)"
@@ -108,7 +99,9 @@ jobs:
         timeout-minutes: 90
         shell: bash
         run: |
-          if [ "$RUNNER_OS" = "Linux" ]; then
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            cmake --build build --config Release --parallel --target urconnect-cli urconnect-test-network
+          elif [ "$RUNNER_OS" = "Linux" ]; then
             cmake --build build --config Release --parallel 2
           else
             cmake --build build --config Release --parallel
@@ -125,6 +118,22 @@ jobs:
           if (-not (Test-Path $cli)) { throw "urconnect-cli.exe was not found at $cli" }
           Copy-Item $cli "urconnect-cli-windows-x64.exe"
           & .\urconnect-cli-windows-x64.exe --version
+          if ($LASTEXITCODE -ne 0) { throw "Windows CLI version check failed" }
+
+      - name: Check Windows CLI runtime dependencies
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+          $vs = & $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+          $dumpbin = Get-ChildItem "$vs\VC\Tools\MSVC\*\bin\Hostx64\x64\dumpbin.exe" | Sort-Object FullName -Descending | Select-Object -First 1
+          if (-not $dumpbin) { throw "dumpbin.exe was not found" }
+          $dependencies = & $dumpbin.FullName /dependents .\urconnect-cli-windows-x64.exe
+          if ($LASTEXITCODE -ne 0) { throw "Could not inspect Windows CLI dependencies" }
+          $dependencies | Write-Output
+          if ($dependencies -match '(?i)(VCRUNTIME|MSVCP|MSVCR|ucrtbase|api-ms-win-crt|Qt5|shp)\S*\.dll') {
+            throw "Windows CLI depends on an external runtime DLL"
+          }
 
       - name: Deploy Qt runtime on macOS
         if: runner.os == 'macOS'

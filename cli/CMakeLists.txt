@@ -1,6 +1,17 @@
 # urconnect-cli: headless command-line front end for the UrConnect
 # network-analysis engine (SNDAApp). No Qt dependency.
 
+# CMake 3.13/3.14 lack MSVC_RUNTIME_LIBRARY. Keep this fallback local to
+# the CLI directory so the Qt desktop application's runtime is unaffected.
+if(MSVC AND NOT POLICY CMP0091)
+    foreach(language C CXX)
+        foreach(config DEBUG RELEASE RELWITHDEBINFO MINSIZEREL)
+            string(REPLACE "/MD" "/MT" CMAKE_${language}_FLAGS_${config}
+                "${CMAKE_${language}_FLAGS_${config}}")
+        endforeach()
+    endforeach()
+endif()
+
 set(URCONNECT_CLI_SOURCES
     main.cpp
     ../SNDAApp/Calculation.cpp
@@ -69,4 +80,14 @@ if(BUILD_TESTING)
         )
         set_tests_properties(cli_macau_network PROPERTIES LABELS integration)
     endif()
+endif()
+
+if(MSVC AND POLICY CMP0091)
+    set(cli_runtime_targets urconnect-cli urconnect-cli-shp)
+    if(BUILD_TESTING)
+        list(APPEND cli_runtime_targets urconnect-test-network)
+    endif()
+    set_target_properties(${cli_runtime_targets} PROPERTIES
+        MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>"
+    )
 endif()
