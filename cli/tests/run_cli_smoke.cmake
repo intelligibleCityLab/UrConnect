@@ -61,8 +61,12 @@ function(expect_same_field LEFT RIGHT FIELD)
 endfunction()
 
 function(expect_value NAME FIELD ROW VALUE)
+    expect_dbf_value("${NAME}" network.dbf "${FIELD}" "${ROW}" "${VALUE}")
+endfunction()
+
+function(expect_dbf_value NAME FILE_NAME FIELD ROW VALUE)
     execute_process(
-        COMMAND "${NETWORK_TOOL}" field-value "${TEST_ROOT}/${NAME}/network.dbf" "${FIELD}" "${ROW}" "${VALUE}"
+        COMMAND "${NETWORK_TOOL}" field-value "${TEST_ROOT}/${NAME}/${FILE_NAME}" "${FIELD}" "${ROW}" "${VALUE}"
         RESULT_VARIABLE result
     )
     if(NOT result EQUAL 0)
@@ -117,6 +121,19 @@ run_success(stepdepth stepdepth --from 0 --type mr)
 expect_field(stepdepth StepD_mr)
 run_success(od od --from 0 --to 2 --type mr)
 expect_file(od "Path_M_from 0-to 2.shp")
+expect_dbf_value(od "Path_M_from 0-to 2.dbf" PathLen 0 0)
+expect_dbf_value(od "Path_M_from 0-to 2.dbf" PathLen 1 10)
+run_success(od_weighted od --from 0 --to 2 --type mr --weight weight --angle 45 --junction-turns 2)
+expect_dbf_value(od_weighted "Path_M_from 0-to 2.dbf" PathLen 1 10)
+expect_dbf_value(od_weighted "Path_M_from 0-to 2.dbf" DC 1 1)
+expect_dbf_value(od_weighted "Path_M_from 0-to 2.dbf" Wweight 1 40)
+run_success(od_multi od --from 0,1 --to 2 --type mr --weight weight --angle 45 --junction-turns 2)
+set(od_sub "Path_M/Path_M_from 1-to 2/Path_M_from 1-to 2.dbf")
+expect_dbf_value(od_multi "${od_sub}" From_OID 0 1)
+expect_dbf_value(od_multi "${od_sub}" To_OID 0 1)
+expect_dbf_value(od_multi "${od_sub}" PathLen 1 10)
+expect_dbf_value(od_multi "${od_sub}" Wweight 0 20)
+expect_dbf_value(od_multi "${od_sub}" Wweight 1 50)
 
 create_network(od_pairs)
 file(WRITE "${TEST_ROOT}/od_pairs/pairs.csv" "origin,destination\r\n0, 2\r\n")

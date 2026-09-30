@@ -27,6 +27,7 @@
 #include <tuple>
 #include <thread>
 #include <limits>
+#include <stdexcept>
 #include "CSVProcess.h"
 
 #ifndef _WIN32
@@ -497,6 +498,14 @@ inline void  GenerateDirectedGraph3(ShapeFileAccessor &fileAccessor, std::set<in
 
 //根据指定路径ID生成有向图
 inline void  GenerateDirectedGraph2(ShapeFileAccessor &fileAccessor, std::set<int> &inRoads, int old_numEdges, Graph_d &outGraph) {
+
+	// Keep both directions of isolated roads, including a one-road path.
+	// Adding only transition edges leaves those Dijkstra sources missing.
+	if (!inRoads.empty()) {
+		const size_t requiredVertices = static_cast<size_t>(*inRoads.rbegin() + old_numEdges) + 1;
+		while (boost::num_vertices(outGraph) < requiredVertices)
+			boost::add_vertex(outGraph);
+	}
 
 	//遍历每条边，生成两个方向的新边
 	int newEdgeIndex = 0;
@@ -11204,55 +11213,41 @@ void Calculation::outputGeoSub(int nSHPType, std::string str, std::map<int, std:
 
 		//创建Dbf文件		
 		hDBF = DBFCreate(newDbfPath.c_str());
+		if (hSHPHandle == NULL || hDBF == NULL) {
+			if (hSHPHandle != NULL) SHPClose(hSHPHandle);
+			if (hDBF != NULL) DBFClose(hDBF);
+			throw std::runtime_error("Cannot create OD output: " + newShpPath);
+		}
 
 		//添加表列
 		std::map<std::string, int> idxMp;
-		DBFAddField(hDBF, "From_OID", FTInteger, 20, 0);
-		idxMp["From_OID"] = 0;
-		DBFAddField(hDBF, "To_OID", FTInteger, 20, 0);
-		idxMp["To_OID"] = 1;
-		int idxCount = 2;
+		idxMp["From_OID"] = DBFAddField(hDBF, "From_OID", FTInteger, 20, 0);
+		idxMp["To_OID"] = DBFAddField(hDBF, "To_OID", FTInteger, 20, 0);
 		if (angleLimitDR < INT_MAX - 10) {
-			DBFAddField(hDBF, "DC", FTInteger, 20, 0);
-			DBFAddField(hDBF, "DD", FTDouble, 20, 4);
-			DBFAddField(hDBF, "DDL", FTDouble, 20, 4);
-			//DBFAddField(hDBF, "WDD", FTDouble, 20, 4);
-
-			idxMp["DC"] = 2;
-			idxMp["DD"] = 3;
-			idxMp["DDL"] = 4;
-			//idxMp["WDD"] = 5;
-			idxCount += 3;
+			idxMp["DC"] = DBFAddField(hDBF, "DC", FTInteger, 20, 0);
+			idxMp["DD"] = DBFAddField(hDBF, "DD", FTDouble, 20, 4);
+			idxMp["DDL"] = DBFAddField(hDBF, "DDL", FTDouble, 20, 4);
 		}
-		DBFAddField(hDBF, "PathLen", FTDouble, 20, 4);
-		idxMp["PathLen"] = idxCount;
-		idxCount += 1;
+		idxMp["PathLen"] = DBFAddField(hDBF, "PathLen", FTDouble, 20, 4);
 
 		// Guard against an empty WDD list (no weight attributes),
 		// mirroring outputGeodesics().
 		if (!GeodesicsData[str].WDD.empty())
 		for (auto wgt_it = GeodesicsData[str].WDD[0].begin(); wgt_it != GeodesicsData[str].WDD[0].end(); wgt_it++) {
 			std::string fieldname = "WD" + wgt_it->first.substr(0, 8);
-			DBFAddField(hDBF, fieldname.c_str(), FTDouble, 20, 4);
-			idxMp[fieldname] = idxCount;
-			idxCount += 1;
+			idxMp[fieldname] = DBFAddField(hDBF, fieldname.c_str(), FTDouble, 20, 4);
 		}
 
 		if (Jnc_t_limit_Jnc < INT_MAX - 10) {
-			DBFAddField(hDBF, "Jnc", FTInteger, 20, 0);
-			idxMp["Jnc"] = idxCount;
-			idxCount += 1;
+			idxMp["Jnc"] = DBFAddField(hDBF, "Jnc", FTInteger, 20, 0);
 		}
 		if (weight.size() > 0) {
-			DBFAddField(hDBF, "Wgt", FTDouble, 20, 4);
-			idxMp["Wgt"] = idxCount;
+			idxMp["Wgt"] = DBFAddField(hDBF, "Wgt", FTDouble, 20, 4);
 		}
 		if (weight.size() > 0) {
 			for (auto wgt_it = GeodesicsData[str].Wgt[0].begin(); wgt_it != GeodesicsData[str].Wgt[0].end(); wgt_it++) {
 				std::string fieldname = "W" + wgt_it->first.substr(0, 9);
-				DBFAddField(hDBF, fieldname.c_str(), FTDouble, 20, 4);
-				idxMp[fieldname] = idxCount;
-				idxCount += 1;
+				idxMp[fieldname] = DBFAddField(hDBF, fieldname.c_str(), FTDouble, 20, 4);
 			}
 		}
 
@@ -11279,25 +11274,25 @@ void Calculation::outputGeoSub(int nSHPType, std::string str, std::map<int, std:
 				SHPDestroyObject(psShape);
 
 				//添加对应的图形数据
-				DBFWriteDoubleAttribute(hDBF, record, idxMp["From_OID"], GeodesicsData[str].From_OID[record]);
-				DBFWriteDoubleAttribute(hDBF, record, idxMp["To_OID"], GeodesicsData[str].To_OID[record]);
+				DBFWriteDoubleAttribute(hDBF, record, idxMp["From_OID"], GeodesicsData[str].From_OID[i]);
+				DBFWriteDoubleAttribute(hDBF, record, idxMp["To_OID"], GeodesicsData[str].To_OID[i]);
 				if (angleLimitDR < INT_MAX - 10) {
-					DBFWriteDoubleAttribute(hDBF, record, idxMp["DC"], GeodesicsData[str].DC[record]);
-					DBFWriteDoubleAttribute(hDBF, record, idxMp["DD"], GeodesicsData[str].DD[record]);
-					DBFWriteDoubleAttribute(hDBF, record, idxMp["DDL"], GeodesicsData[str].DDL[record]);
+					DBFWriteDoubleAttribute(hDBF, record, idxMp["DC"], GeodesicsData[str].DC[i]);
+					DBFWriteDoubleAttribute(hDBF, record, idxMp["DD"], GeodesicsData[str].DD[i]);
+					DBFWriteDoubleAttribute(hDBF, record, idxMp["DDL"], GeodesicsData[str].DDL[i]);
 					if (!GeodesicsData[str].WDD.empty())
 					for (auto wgt_it = GeodesicsData[str].WDD[0].begin(); wgt_it != GeodesicsData[str].WDD[0].end(); wgt_it++) {
 						std::string fieldname = "WD" + wgt_it->first.substr(0, 8);
-						DBFWriteDoubleAttribute(hDBF, record, idxMp[fieldname], GeodesicsData[str].WDD[record][wgt_it->first]);
+						DBFWriteDoubleAttribute(hDBF, record, idxMp[fieldname], GeodesicsData[str].WDD[i][wgt_it->first]);
 					}
 				}
-				DBFWriteDoubleAttribute(hDBF, record, idxMp["PathLen"], GeodesicsData[str].PathLen[record]);
+				DBFWriteDoubleAttribute(hDBF, record, idxMp["PathLen"], GeodesicsData[str].PathLen[i]);
 				if (Jnc_t_limit_Jnc < INT_MAX - 10)
-					DBFWriteDoubleAttribute(hDBF, record, idxMp["Jnc"], GeodesicsData[str].Jnc[record]);
+					DBFWriteDoubleAttribute(hDBF, record, idxMp["Jnc"], GeodesicsData[str].Jnc[i]);
 				if (weight.size() > 0) {
 					for (auto wgt_it = GeodesicsData[str].Wgt[0].begin(); wgt_it != GeodesicsData[str].Wgt[0].end(); wgt_it++) {
 						std::string fieldname = "W" + wgt_it->first.substr(0, 9);
-						DBFWriteDoubleAttribute(hDBF, record, idxMp[fieldname], GeodesicsData[str].Wgt[record][wgt_it->first]); // fixed: was NetreachData (copy-paste bug)
+						DBFWriteDoubleAttribute(hDBF, record, idxMp[fieldname], GeodesicsData[str].Wgt[i][wgt_it->first]);
 					}
 				}
 
@@ -11415,53 +11410,42 @@ void Calculation::outputGeodesics(int nSHPType, std::string str, std::map<int, s
 	//创建Dbf文件		
 	hDBF = DBFCreate(outDbfPath.c_str());
 
-	if (hDBF == NULL)
-		return;
+	if (hSHPHandle == NULL || hDBF == NULL) {
+		if (hSHPHandle != NULL) SHPClose(hSHPHandle);
+		if (hDBF != NULL) DBFClose(hDBF);
+		throw std::runtime_error("Cannot create OD output: " + outShpPath);
+	}
 
 	//添加表列
 	std::map<std::string, int> idxMp;
-	DBFAddField(hDBF, "ID", FTInteger, 20, 0);
-	idxMp["ID"] = 0;
-	int idxCount = 2;
+	// Use the actual field indices; optional columns must not shift writes
+	// beyond the DBF field arrays.
+	idxMp["ID"] = DBFAddField(hDBF, "ID", FTInteger, 20, 0);
 	if (angleLimitDR < INT_MAX - 10) {
-		DBFAddField(hDBF, "DC", FTInteger, 20, 0);
-		DBFAddField(hDBF, "DD", FTDouble, 20, 4);
-		DBFAddField(hDBF, "DDL", FTDouble, 20, 4);
-
-		idxMp["DC"] = 1;
-		idxMp["DD"] = 2;
-		idxMp["DDL"] = 3;
-		idxCount += 3;
+		idxMp["DC"] = DBFAddField(hDBF, "DC", FTInteger, 20, 0);
+		idxMp["DD"] = DBFAddField(hDBF, "DD", FTDouble, 20, 4);
+		idxMp["DDL"] = DBFAddField(hDBF, "DDL", FTDouble, 20, 4);
 	}
-	DBFAddField(hDBF, "PathLen", FTDouble, 20, 4);
-	idxMp["PathLen"] = idxCount;
-	idxCount += 1;
+	idxMp["PathLen"] = DBFAddField(hDBF, "PathLen", FTDouble, 20, 4);
 
 	// Check if WDD is not empty
 	if (!GeodesicsData[str].WDD.empty()) {
 		for (auto wgt_it = GeodesicsData[str].WDD[0].begin(); wgt_it != GeodesicsData[str].WDD[0].end(); wgt_it++) {
 			std::string fieldname = "WD" + wgt_it->first.substr(0, 8);
-			DBFAddField(hDBF, fieldname.c_str(), FTDouble, 20, 4);
-			idxMp[fieldname] = idxCount;
-			idxCount += 1;
+			idxMp[fieldname] = DBFAddField(hDBF, fieldname.c_str(), FTDouble, 20, 4);
 		}
 	}
 
 	if (Jnc_t_limit_Jnc < INT_MAX - 10) {
-		DBFAddField(hDBF, "Jnc", FTInteger, 20, 0);
-		idxMp["Jnc"] = idxCount;
-		idxCount += 1;
+		idxMp["Jnc"] = DBFAddField(hDBF, "Jnc", FTInteger, 20, 0);
 	}
 	if (!weight.empty()) {
-		DBFAddField(hDBF, "Wgt", FTDouble, 20, 4);
-		idxMp["Wgt"] = idxCount;
+		idxMp["Wgt"] = DBFAddField(hDBF, "Wgt", FTDouble, 20, 4);
 	}
 	if (!weight.empty()) {
 		for (auto wgt_it = GeodesicsData[str].Wgt[0].begin(); wgt_it != GeodesicsData[str].Wgt[0].end(); wgt_it++) {
 			std::string fieldname = "W" + wgt_it->first.substr(0, 9);
-			DBFAddField(hDBF, fieldname.c_str(), FTDouble, 20, 4);
-			idxMp[fieldname] = idxCount;
-			idxCount += 1;
+			idxMp[fieldname] = DBFAddField(hDBF, fieldname.c_str(), FTDouble, 20, 4);
 		}
 	}
 
