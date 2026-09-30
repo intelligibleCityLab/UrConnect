@@ -6218,6 +6218,8 @@ int findLimitPos(std::string input_str, int idx, std::string direction) {
 		pos_to_limit[input_str.find(">")] = ">";
 	if (input_str.find("=") != std::string::npos && pos_to_limit.size() == 0)
 		pos_to_limit[input_str.find("=")] = "=";
+	if (pos_to_limit.empty())
+		return -1;
 
 	//计算截断位置
 	auto it = pos_to_limit.begin();
@@ -6248,7 +6250,8 @@ int findLimitPos(std::string input_str, int idx, std::string direction) {
 		else
 			return iter->first + it->second.size();
 	}
-		
+
+	return -1;
 }
 
 bool MainWindow::getWeightDataByName(std::string WgtLimitStr, std::map<int, double> &data) {
@@ -7766,6 +7769,7 @@ std::string getShpFileName(std::string filepath) {
 
 void MainWindow::OnFileOpen()
 {
+	const QString previousProcessStr = process_str;
 	process_str = "Reading, please wait...";
 	this->locationLabel->setText(process_str);
 
@@ -7785,6 +7789,11 @@ void MainWindow::OnFileOpen()
 		template_string,
 		&selectedFilter,
 		options);
+	if (fileName.isEmpty()) {
+		process_str = previousProcessStr;
+		this->locationLabel->setText(process_str);
+		return;
+	}
 	this->shpFileName = fileName;
 
 	if (!fileName.isEmpty())

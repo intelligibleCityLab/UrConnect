@@ -40,8 +40,13 @@ public:
         // more info: http://doc.qt.io/qt-5/qfileopenevent.html
         if (event->type() == QEvent::FileOpen) {
             QFileOpenEvent *openEvent = static_cast<QFileOpenEvent *>(event);
-            mFileToLoad = openEvent->file();
-            mMainWindow->loadFile(openEvent->file());
+            // Finder can deliver this event before the main window exists.
+            if (mMainWindow) {
+                mMainWindow->loadFile(openEvent->file());
+            } else {
+                mFileToLoad = openEvent->file();
+            }
+            return true;
         }
 
         return QApplication::event(event);

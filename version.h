@@ -23,10 +23,11 @@
 
 #include "version_defs.h"
 
-// use these to define the depthmap versions
-#define DEPTHMAPX_MAJOR_VERSION 0
-#define DEPTHMAPX_MINOR_VERSION 7
-#define DEPTHMAPX_REVISION_VERSION 0
+// Legacy names retained for source compatibility; UrConnect's version is
+// configured once in the top-level CMake project.
+#define DEPTHMAPX_MAJOR_VERSION URCONNECT_VERSION_MAJOR
+#define DEPTHMAPX_MINOR_VERSION URCONNECT_VERSION_MINOR
+#define DEPTHMAPX_REVISION_VERSION URCONNECT_VERSION_PATCH
 
 #define DEPTHMAP_MODULE_VERSION 10.04
 

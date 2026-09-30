@@ -16,6 +16,10 @@ Files under `genlib/` include components from the depthmapX-related genlib codeb
 
 Files under `SNDAApp/lib/` include Shapelib sources. Shapelib source headers state that the software is available under an MIT-style license, or alternatively under LGPL terms. The bundled Shapelib `COPYING` file is retained in `SNDAApp/lib/COPYING`.
 
-## Review Before Public Release
+## Qt
 
-Before switching the GitHub repository from private to public, review this file against the final tracked files and update it with any additional bundled libraries, icons, sample data, screenshots, or documentation assets.
+The UrConnect desktop application uses dynamically linked Qt 5 modules distributed under their applicable open-source terms, including GNU LGPLv3 and GNU GPLv3. Qt source code and license information are available from <https://www.qt.io/licensing/open-source-lgpl-obligations>.
+
+## Boost
+
+UrConnect uses header-only components from the Boost C++ Libraries. Boost is distributed under the Boost Software License 1.0, available from <https://www.boost.org/LICENSE_1_0.txt>.

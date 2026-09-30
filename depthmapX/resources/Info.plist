@@ -18,6 +18,10 @@
 	<string>UrConnect</string>
 	<key>CFBundleIdentifier</key>
 	<string>org.intelligiblecitylab.UrConnect</string>
+	<key>CFBundleShortVersionString</key>
+	<string>@MACOSX_BUNDLE_SHORT_VERSION_STRING@</string>
+	<key>CFBundleVersion</key>
+	<string>@MACOSX_BUNDLE_BUNDLE_VERSION@</string>
 	<key>CFBundleDocumentTypes</key>
     <array>
         <dict>

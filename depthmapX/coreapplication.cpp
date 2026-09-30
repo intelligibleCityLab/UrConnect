@@ -32,13 +32,25 @@ int CoreApplication::exec() {
     //}
 
     auto args = arguments();
-    QString fileToLoad = mFileToLoad;
+    QString fileToLoad;
     if (args.length() == 2)
     {
-        fileToLoad = args[1];
+        // Ignore flag-like arguments, e.g. the -psn_0_xxx process serial
+        // number Finder passes when launching the app on macOS.
+        if (!args[1].startsWith('-')) {
+            fileToLoad = args[1];
+        }
     }
 
-    mMainWindow = MainWindowFactory::getMainWindow(fileToLoad, settings);
+    // Window construction may itself dispatch a FileOpen event.
+    mMainWindow = MainWindowFactory::getMainWindow(QString(), settings);
+    if (!mFileToLoad.isEmpty()) {
+        fileToLoad = mFileToLoad;
+        mFileToLoad.clear();
+    }
+    if (!fileToLoad.isEmpty()) {
+        mMainWindow->loadFile(fileToLoad);
+    }
     mMainWindow->show();
     return QApplication::exec();
 }

@@ -47,7 +47,7 @@ The documentation is built as Sphinx HTML pages with a left navigation, page tab
 
 ## Installation
 
-Download the package for your operating system from [GitHub Releases](https://github.com/intelligibleCityLab/UrConnect/releases). Windows is the primary v0.1.0 release target. macOS and Linux packages are provided as experimental builds while cross-platform validation continues.
+The source version is 0.2.0. Check [GitHub Releases](https://github.com/intelligibleCityLab/UrConnect/releases) for published packages. The existing standalone Windows desktop application remains in the v0.1.0 release; it is not relabelled as 0.2.0. macOS and Linux packages remain experimental while cross-platform validation continues.
 
 Build from source:
 
@@ -58,6 +58,55 @@ cmake --build build --config Release
 
 See the [Installation guide](https://intelligiblecitylab.github.io/UrConnect/en/installation.html) for platform-specific commands.
 
+## Command-line interface
+
+In addition to the desktop application, the build produces `urconnect-cli`, a headless command-line front end for the analysis engine (no Qt or display required), suitable for batch and reproducible pipelines:
+
+```bash
+# Metric reach at 400 m and 800 m radii; appends R400/R800 columns to the input .dbf
+urconnect-cli reach network.shp --radius 400,800
+
+# Directional reach: 45-degree turn angle, up to 0/1/2 directional changes
+urconnect-cli dr network.shp --angle 45 --turns 0,1,2
+
+# Directional distance, mixed reach, junction reach/distance
+urconnect-cli ddl network.shp --radius 400,800 --angle 45
+urconnect-cli mdr network.shp --radius 800 --angle 45 --turns 1,2
+urconnect-cli jnr network.shp --junction-degree 3 --junction-limit 2,3
+urconnect-cli jnd network.shp --radius 800 --junction-degree 3
+
+# Reachable subset / step depth from given origin road(s)
+urconnect-cli netreach network.shp --from 10 --radius 400
+urconnect-cli stepdepth network.shp --from 10 --type dr --angle 45
+
+# OD shortest paths: single pair, or a batch CSV with origin,destination columns
+urconnect-cli od network.shp --from 10 --to 500
+urconnect-cli od network.shp --pairs pairs.csv
+```
+
+Run `urconnect-cli --help` for the full option list. Whole-network results are appended as attribute columns to the input `.dbf` (same field names as the GUI); `netreach` and `od` write route shapefiles next to the input; `od --pairs` additionally writes a result CSV (`<pairs>_MR.csv`).
+
+For a CLI-only build without Qt:
+
+```bash
+cmake -S . -B build -DURCONNECT_BUILD_GUI=OFF -DBOOST_ROOT=/path/to/boost
+cmake --build build --config Release --target urconnect-cli
+```
+
+For v0.2.0, the release workflow packages the standalone `urconnect-cli` executable with the macOS and Linux applications and produces a separate `urconnect-cli-windows-x64.exe` asset for Windows. The CLI statically links the bundled Shapelib implementation and does not require Qt or a display server.
+
+## Tests
+
+The CTest suite generates isolated Shapefile networks and exercises every CLI analysis command, weighted analysis, batch OD processing, output fields, output Shapefiles, version reporting, and invalid-input handling:
+
+```bash
+ctest --test-dir build -C Release --output-on-failure
+```
+
+When the locally supplied `UrConnect_Win/test_data/Macau.zip` is present, CTest also runs a 400/800 m reach sweep on its 5,767-road network and compares the 800 m results with the archived reference values. The generated-network tests remain self-contained for clean CI checkouts and cover sweep consistency, weighted and unlimited reach, and mean distance.
+
+GitHub Actions runs the headless build and tests on Windows x64, macOS ARM64, and Linux x64 for pushes and pull requests.
+
 ## Repository Layout
 
 ```text
@@ -67,13 +116,14 @@ See the [Installation guide](https://intelligiblecitylab.github.io/UrConnect/en/
 ├── genlib/           Shared geometry, math, parsing, and utility code
 ├── mgraph440/        Legacy graph-analysis code retained for compatibility
 ├── SNDAApp/          UrConnect analysis code and bundled Shapelib sources
+├── cli/              urconnect-cli headless command-line front end
 ├── docs/             Sphinx documentation in English, Simplified Chinese, Traditional Chinese
 └── .github/          Issue templates and GitHub Actions workflows
 ```
 
 ## Citation
 
-If you use UrConnect in academic work, please cite the project. See [CITATION.cff](CITATION.cff). The citation metadata should be updated with publication details before the repository is made public.
+If you use UrConnect in academic work, please cite the project using [CITATION.cff](CITATION.cff). Publication metadata can be added when the associated article and software DOI are available.
 
 ## License
 

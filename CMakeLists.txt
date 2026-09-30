@@ -1,6 +1,9 @@
 ﻿# UrConnect 项目构建配置
 cmake_minimum_required(VERSION 3.13.0)
-project(UrConnect)
+project(UrConnect VERSION 0.2.0)
+
+include(CTest)
+option(URCONNECT_BUILD_GUI "Build the Qt desktop application" ON)
 
 # 设置 C++ 标准
 set(CMAKE_CXX_STANDARD 11)
@@ -24,6 +27,9 @@ endif()
 
 # 策略设置
 cmake_policy(SET CMP0076 NEW)
+if(POLICY CMP0144)
+    cmake_policy(SET CMP0144 NEW)
+endif()
 
 # 包含目录
 include_directories(${CMAKE_SOURCE_DIR})
@@ -77,10 +83,13 @@ if(MSVC)
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MT")
 endif()
 
-# 子目录构建
-add_subdirectory(genlib)
-add_subdirectory(mgraph440)
+# Shapelib and the CLI can be built without Qt for headless CI and servers.
 add_subdirectory(SNDAApp/lib)
-add_subdirectory(salalib)
-add_subdirectory(depthmapX)
+add_subdirectory(cli)
 
+if(URCONNECT_BUILD_GUI)
+    add_subdirectory(genlib)
+    add_subdirectory(mgraph440)
+    add_subdirectory(salalib)
+    add_subdirectory(depthmapX)
+endif()

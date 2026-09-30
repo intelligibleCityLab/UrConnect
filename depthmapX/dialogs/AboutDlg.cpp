@@ -21,7 +21,7 @@ CAboutDlg::CAboutDlg(QWidget *parent)
 {
 	setupUi(this);
 	QString m_version_info;
-    m_version_info = QString(tr("Version %1.%2.%3 (%4, %5)\n\n")).arg(DEPTHMAPX_MAJOR_VERSION).arg(DEPTHMAPX_MINOR_VERSION).arg(DEPTHMAPX_REVISION_VERSION).arg(APP_GIT_BRANCH).arg(APP_GIT_COMMIT);
+    m_version_info = QString(tr("Version %1 (%2, %3)\n\n")).arg(URCONNECT_VERSION).arg(APP_GIT_BRANCH).arg(APP_GIT_COMMIT);
 	QString m_copyright;
     m_copyright = QString(tr("(C) 2000-2010 University College London, Alasdair Turner, Eva Friedrich\n(C) 2011-2014 Tasos Varoudis\n(C) 2017 Christian Sailer, Petros Koutsolampros\n(C) 2026 UrbanConnect Team, Shenzhen University, Georgia Institute of Technology\n\n"));
 	QString m_agreement;

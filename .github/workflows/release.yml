@@ -20,9 +20,9 @@ jobs:
           - name: windows-x64
             os: windows-latest
             qt-arch: win64_msvc2019_64
-            artifact: UrConnect-windows-x64
+            artifact: UrConnect-cli-windows-x64
             package-suffix: windows-x64
-            release-status: Primary Windows release
+            release-status: Standalone Windows CLI
           - name: macos-arm64
             os: macos-14
             artifact: UrConnect-macos-arm64
@@ -36,6 +36,16 @@ jobs:
 
     steps:
       - uses: actions/checkout@v5
+
+      - name: Validate release version
+        if: startsWith(github.ref, 'refs/tags/')
+        shell: bash
+        run: |
+          code_version="$(sed -nE 's/^project\(UrConnect VERSION ([0-9]+\.[0-9]+\.[0-9]+)\)$/\1/p' CMakeLists.txt)"
+          if [ -z "$code_version" ] || [ "$GITHUB_REF_NAME" != "v$code_version" ]; then
+            echo "Release tag $GITHUB_REF_NAME does not match UrConnect version $code_version"
+            exit 1
+          fi
 
       - name: Install Qt
         if: runner.os == 'Windows'
@@ -104,13 +114,17 @@ jobs:
             cmake --build build --config Release --parallel
           fi
 
-      - name: Deploy Qt runtime on Windows
+      - name: Test CLI
+        run: ctest --test-dir build -C Release --output-on-failure
+
+      - name: Package Windows CLI
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          New-Item -ItemType Directory -Force package | Out-Null
-          Copy-Item build/bin/Release/* package -Recurse -Force
-          windeployqt package/UrConnect.exe
+          $cli = "build/bin/Release/urconnect-cli.exe"
+          if (-not (Test-Path $cli)) { throw "urconnect-cli.exe was not found at $cli" }
+          Copy-Item $cli "urconnect-cli-windows-x64.exe"
+          & .\urconnect-cli-windows-x64.exe --version
 
       - name: Deploy Qt runtime on macOS
         if: runner.os == 'macOS'
@@ -132,14 +146,34 @@ jobs:
           macdeployqt package/UrConnect.app -always-overwrite
           codesign --force --deep --sign - package/UrConnect.app
           codesign --verify --deep --strict --verbose=2 package/UrConnect.app
+          cli_path=""
+          for candidate in build/bin/urconnect-cli build/bin/Release/urconnect-cli; do
+            if [ -x "$candidate" ]; then
+              cli_path="$candidate"
+              break
+            fi
+          done
+          if [ -z "$cli_path" ]; then
+            echo "urconnect-cli was not found under build/bin"
+            exit 1
+          fi
+          cp "$cli_path" package/
+          package/urconnect-cli --version
 
       - name: Package Linux executable
         if: runner.os == 'Linux'
         run: |
           mkdir -p package
-          cp -R build/bin/* package/
+          bin_dir="build/bin"
+          if [ -d "build/bin/Release" ]; then
+            bin_dir="build/bin/Release"
+          fi
+          cp -R "$bin_dir"/. package/
+          test -x package/urconnect-cli
+          package/urconnect-cli --version
 
       - name: Add license and notices
+        if: runner.os != 'Windows'
         shell: bash
         run: |
           cp LICENSE package/
@@ -149,16 +183,8 @@ jobs:
           Platform: ${{ matrix.name }}
           Status: ${{ matrix.release-status }}
 
-          Windows is the primary release target. macOS and Linux packages are experimental while packaging and UI validation continue.
+          The legacy standalone Windows desktop application remains in release v0.1.0. This release workflow provides a new Windows CLI; macOS and Linux packages remain experimental.
           EOF
-
-      - name: Archive Windows package
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          $tag = "${env:GITHUB_REF_NAME}"
-          if ([string]::IsNullOrWhiteSpace($tag)) { $tag = "manual" }
-          Compress-Archive -Path package/* -DestinationPath "UrConnect-$tag-${{ matrix.package-suffix }}.zip"
 
       - name: Archive Unix package
         if: runner.os != 'Windows'
@@ -169,9 +195,9 @@ jobs:
         with:
           name: ${{ matrix.artifact }}
           path: |
-            UrConnect-*.zip
+            urconnect-cli-windows-x64.exe
             UrConnect-*.tar.gz
-          if-no-files-found: ignore
+          if-no-files-found: error
 
   publish:
     if: startsWith(github.ref, 'refs/tags/')
@@ -181,25 +207,37 @@ jobs:
       - uses: actions/download-artifact@v7
         with:
           path: artifacts
+      - name: Write checksums
+        run: |
+          find artifacts -type f ! -name SHA256SUMS.txt -print0 \
+            | sort -z \
+            | xargs -0 sha256sum \
+            | sed -E 's#  artifacts/[^/]+/#  #' > artifacts/SHA256SUMS.txt
       - name: Write release notes
         run: |
           cat > release-notes.md <<EOF
           UrConnect ${GITHUB_REF_NAME}
 
-          Windows x64 is the primary release artifact for this version.
+          The legacy standalone Windows desktop application (UrConnect.exe) remains available in release v0.1.0. It is not included or relabelled in this release.
+
+          Command-line interface:
+          - Windows x64: urconnect-cli-windows-x64.exe
 
           Experimental artifacts:
           - macOS arm64
           - Linux x64
 
-          The macOS and Linux builds use the same shared C++ analysis code as Windows, but remain marked experimental while packaging and UI validation continue.
+          The macOS application, Linux application, and Windows CLI use the updated shared C++ analysis code. macOS and Linux packages remain marked experimental while cross-platform validation continues.
           EOF
       - name: Publish GitHub release
         uses: softprops/action-gh-release@v2
         with:
           name: UrConnect ${{ github.ref_name }}
           body_path: release-notes.md
-          files: artifacts/**/*
-          overwrite_files: true
+          files: |
+            artifacts/**/UrConnect-*.tar.gz
+            artifacts/**/urconnect-cli-windows-x64.exe
+            artifacts/SHA256SUMS.txt
+          overwrite_files: false
           draft: false
           prerelease: false

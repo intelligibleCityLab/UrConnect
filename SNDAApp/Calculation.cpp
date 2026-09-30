@@ -13,13 +13,11 @@
 #include <algorithm>
 //#include <boost/filesystem.hpp>
 //namespace bf = boost::filesystem;
-#include <QFile>
+#include <chrono>
 #ifdef _WIN32
 #include <Windows.h>
-#else
-#include <chrono>
-#include <QDir>
 #endif
+#include "dirutils.h"
 #include <cmath>
 #include <codecvt>
 #include <cstdio>
@@ -36,12 +34,23 @@ inline void Sleep(unsigned int milliseconds)
 {
     std::this_thread::sleep_for(std::chrono::milliseconds(milliseconds));
 }
+#endif
 
+#ifndef _WIN32
 inline bool CreateDirectory(const char *path, void *)
 {
-	return QDir().mkpath(QString::fromLocal8Bit(path));
+	return dirutils::makeDirs(path);
 }
 #endif
+
+// Returns the directory part of a path (with trailing separator), or an
+// empty string when the path has no directory component. Accepts both
+// '/' and '\\' separators on all platforms.
+static std::string dirOf(const std::string &path)
+{
+	size_t pos = path.find_last_of("/\\");
+	return (pos == std::string::npos) ? std::string() : path.substr(0, pos + 1);
+}
 
 int Calculation::subset_finishedCount;
 std::vector<bool> Calculation::FinishedVec;
@@ -2399,13 +2408,7 @@ void Calculation::initPara(ShapeFileAccessor &fileAccessor, Graph &g, std::strin
 
 	//输入输出路径
 	infilepath = infileStr;
-	outfilepath = infilepath;
-	for (int i = int(outfilepath.length()) - 1;; i--)
-	{
-		if (outfilepath[i] == '\\')
-			break;
-		outfilepath.pop_back();
-	}
+	outfilepath = dirOf(infilepath);
 	dbfFilePath = infileStr;
 	int n = int(dbfFilePath.size());
 	dbfFilePath.erase(n - 4, 4);
@@ -2483,13 +2486,7 @@ void Calculation::init_MD_para(ShapeFileAccessor &fileAccessor, Graph &g, std::s
 
 	//输入输出路径
 	infilepath = infileStr;
-	outfilepath = infilepath;
-	for (int i = int(outfilepath.length()) - 1;; i--)
-	{
-		if (outfilepath[i] == '/')
-			break;
-		outfilepath.pop_back();
-	}
+	outfilepath = dirOf(infilepath);
 	dbfFilePath = infileStr;
 	int n = int(dbfFilePath.size());
 	dbfFilePath.erase(n - 4, 4);
@@ -2526,13 +2523,7 @@ void Calculation::init_MR_para(ShapeFileAccessor &fileAccessor, Graph &g, std::s
 
 	//输入输出路径
 	infilepath = infileStr;
-	outfilepath = infilepath;
-	for (int i = int(outfilepath.length()) - 1;; i--)
-	{
-		if (outfilepath[i] == '/')
-			break;
-		outfilepath.pop_back();
-	}
+	outfilepath = dirOf(infilepath);
 	dbfFilePath = infileStr;
 	int n = int(dbfFilePath.size());
 	dbfFilePath.erase(n - 4, 4);
@@ -2584,13 +2575,7 @@ void Calculation::init_MDR_para(ShapeFileAccessor &fileAccessor, Graph &g, std::
 	std::string txAngleThreshold, std::string txDirectionalChanges, bool ckJnc, bool ckWgt, std::string txNewJnc, std::vector<std::string> &weightAttributesSet) {
 	//输入输出路径
 	infilepath = infileStr;
-	outfilepath = infilepath;
-	for (int i = int(outfilepath.length()) - 1;; i--)
-	{
-		if (outfilepath[i] == '/')
-			break;
-		outfilepath.pop_back();
-	}
+	outfilepath = dirOf(infilepath);
 	dbfFilePath = infileStr;
 	int n = int(dbfFilePath.size());
 	dbfFilePath.erase(n - 4, 4);
@@ -2627,13 +2612,7 @@ void Calculation::init_DDL_para(ShapeFileAccessor &fileAccessor, Graph &g, std::
 	std::string txAngleThreshold, std::string txDirectionalChanges, bool ckJnc, bool ckWgt, std::string txNewJnc, std::vector<std::string> &weightAttributesSet) {
 	//输入输出路径
 	infilepath = infileStr;
-	outfilepath = infilepath;
-	for (int i = int(outfilepath.length()) - 1;; i--)
-	{
-		if (outfilepath[i] == '/')
-			break;
-		outfilepath.pop_back();
-	}
+	outfilepath = dirOf(infilepath);
 	dbfFilePath = infileStr;
 	int n = int(dbfFilePath.size());
 	dbfFilePath.erase(n - 4, 4);
@@ -2675,13 +2654,7 @@ void Calculation::init_DR_para(ShapeFileAccessor &fileAccessor, Graph &g, std::s
 
 	//输入输出路径
 	infilepath = infileStr;
-	outfilepath = infilepath;
-	for (int i = int(outfilepath.length()) - 1;; i--)
-	{
-		if (outfilepath[i] == '/')
-			break;
-		outfilepath.pop_back();
-	}
+	outfilepath = dirOf(infilepath);
 	dbfFilePath = infileStr;
 	int n = int(dbfFilePath.size());
 	dbfFilePath.erase(n - 4, 4);
@@ -2722,13 +2695,7 @@ void Calculation::init_JnD_para(ShapeFileAccessor &fileAccessor, Graph &g, std::
 
 	//输入输出路径
 	infilepath = infileStr;
-	outfilepath = infilepath;
-	for (int i = int(outfilepath.length()) - 1;; i--)
-	{
-		if (outfilepath[i] == '/')
-			break;
-		outfilepath.pop_back();
-	}
+	outfilepath = dirOf(infilepath);
 	dbfFilePath = infileStr;
 	int n = int(dbfFilePath.size());
 	dbfFilePath.erase(n - 4, 4);
@@ -2770,13 +2737,7 @@ void Calculation::init_JnR_para(ShapeFileAccessor &fileAccessor, Graph &g, std::
 
 	//输入输出路径
 	infilepath = infileStr;
-	outfilepath = infilepath;
-	for (int i = int(outfilepath.length()) - 1;; i--)
-	{
-		if (outfilepath[i] == '/')
-			break;
-		outfilepath.pop_back();
-	}
+	outfilepath = dirOf(infilepath);
 	dbfFilePath = infileStr;
 	int n = int(dbfFilePath.size());
 	dbfFilePath.erase(n - 4, 4);
@@ -2818,13 +2779,7 @@ void Calculation::init_Net_para(ShapeFileAccessor &fileAccessor, Graph &g, std::
 
 	//输入输出路径
 	infilepath = infileStr;
-	outfilepath = infilepath;
-	for (int i = int(outfilepath.length()) - 1;; i--)
-	{
-		if (outfilepath[i] == '/')
-			break;
-		outfilepath.pop_back();
-	}
+	outfilepath = dirOf(infilepath);
 	dbfFilePath = infileStr;
 	int n = int(dbfFilePath.size());
 	dbfFilePath.erase(n - 4, 4);
@@ -2872,13 +2827,7 @@ void Calculation::init_Net_para(ShapeFileAccessor &fileAccessor, Graph &g, std::
 void Calculation::init_dbf_path(std::string infileStr) {
 	//输入输出路径
 	infilepath = infileStr;
-	outfilepath = infilepath;
-	for (int i = int(outfilepath.length()) - 1;; i--)
-	{
-		if (outfilepath[i] == '/')
-			break;
-		outfilepath.pop_back();
-	}
+	outfilepath = dirOf(infilepath);
 	dbfFilePath = infileStr;
 	int n = int(dbfFilePath.size());
 	dbfFilePath.erase(n - 4, 4);
@@ -2893,13 +2842,7 @@ void Calculation::init_Net_MR_para(ShapeFileAccessor &fileAccessor, Graph &g, st
 
 	//输入输出路径
 	infilepath = infileStr;
-	outfilepath = infilepath;
-	for (int i = int(outfilepath.length()) - 1;; i--)
-	{
-		if (outfilepath[i] == '/')
-			break;
-		outfilepath.pop_back();
-	}
+	outfilepath = dirOf(infilepath);
 	dbfFilePath = infileStr;
 	int n = int(dbfFilePath.size());
 	dbfFilePath.erase(n - 4, 4);
@@ -2934,13 +2877,7 @@ void Calculation::init_Net_DR_para(ShapeFileAccessor &fileAccessor, Graph &g, st
 
 	//输入输出路径
 	infilepath = infileStr;
-	outfilepath = infilepath;
-	for (int i = int(outfilepath.length()) - 1;; i--)
-	{
-		if (outfilepath[i] == '/')
-			break;
-		outfilepath.pop_back();
-	}
+	outfilepath = dirOf(infilepath);
 	dbfFilePath = infileStr;
 	int n = int(dbfFilePath.size());
 	dbfFilePath.erase(n - 4, 4);
@@ -2980,13 +2917,7 @@ void Calculation::init_Net_JnR_para(ShapeFileAccessor &fileAccessor, Graph &g, s
 
 	//输入输出路径
 	infilepath = infileStr;
-	outfilepath = infilepath;
-	for (int i = int(outfilepath.length()) - 1;; i--)
-	{
-		if (outfilepath[i] == '/')
-			break;
-		outfilepath.pop_back();
-	}
+	outfilepath = dirOf(infilepath);
 	dbfFilePath = infileStr;
 	int n = int(dbfFilePath.size());
 	dbfFilePath.erase(n - 4, 4);
@@ -3018,13 +2949,7 @@ void Calculation::init_Geo_MR_para(ShapeFileAccessor &fileAccessor, Graph &g, st
 
 	//输入输出路径
 	infilepath = infileStr;
-	outfilepath = infilepath;
-	for (int i = int(outfilepath.length()) - 1;; i--)
-	{
-		if (outfilepath[i] == '/')
-			break;
-		outfilepath.pop_back();
-	}
+	outfilepath = dirOf(infilepath);
 	dbfFilePath = infileStr;
 	int n = int(dbfFilePath.size());
 	dbfFilePath.erase(n - 4, 4);
@@ -3054,13 +2979,7 @@ void Calculation::init_Geo_DR_para(ShapeFileAccessor &fileAccessor, Graph &g, st
 
 	//输入输出路径
 	infilepath = infileStr;
-	outfilepath = infilepath;
-	for (int i = int(outfilepath.length()) - 1;; i--)
-	{
-		if (outfilepath[i] == '/')
-			break;
-		outfilepath.pop_back();
-	}
+	outfilepath = dirOf(infilepath);
 	dbfFilePath = infileStr;
 	int n = int(dbfFilePath.size());
 	dbfFilePath.erase(n - 4, 4);
@@ -3090,13 +3009,7 @@ void Calculation::init_Geo_JnR_para(ShapeFileAccessor &fileAccessor, Graph &g, s
 
 	//输入输出路径
 	infilepath = infileStr;
-	outfilepath = infilepath;
-	for (int i = int(outfilepath.length()) - 1;; i--)
-	{
-		if (outfilepath[i] == '/')
-			break;
-		outfilepath.pop_back();
-	}
+	outfilepath = dirOf(infilepath);
 	dbfFilePath = infileStr;
 	int n = int(dbfFilePath.size());
 	dbfFilePath.erase(n - 4, 4);
@@ -4215,11 +4128,12 @@ void Calculation::calculateMRbyDij(ShapeFileAccessor& fileAccessor) {
 		}
 		int startRoad = *cur_iter;
 		getDistDijkstra(distFunc, startRoad, max_MRLimit, dist);
-		partInLength.clear();
-		outRoad.clear();
 		std::set<int> validRoad; //记录每个MRLimit参数下特有的路。
 		for (auto iter = MRLimitSet.begin(); iter != MRLimitSet.end(); iter++)
 		{
+			// A segment partially covered at one radius may be fully covered at the next.
+			partInLength.clear();
+			outRoad.clear();
 			validRoad.clear();
 			double MRLimit = *iter;
 			double mr = 0, Ls0 = 0, sumLs = 0, sumdLs = 0;
@@ -4227,6 +4141,7 @@ void Calculation::calculateMRbyDij(ShapeFileAccessor& fileAccessor) {
 			{
 				//全部线段都能通行，所有道路的mr是一致的，但是meanMD是不同的
 				double mr = 0, sumdLs = 0;
+				outRoad.insert(fileAccessor.roadID.begin(), fileAccessor.roadID.end());
 				for (auto it = fileAccessor.roadID.begin(); it != fileAccessor.roadID.end(); it++) {
 					mr += fileAccessor.Length[*it];
 					if (*it != startRoad) {
@@ -8205,9 +8120,15 @@ void Calculation::calculateJncRbyBFS(ShapeFileAccessor &fileAccessor) {
 				}
 
 				//初始化
-				Jnc_ddlSum[Jnc_maxNum] = 0, Jnc_lenSum, Jnc_ddl[Jnc_maxNum] = 0;
-				Jnc_dd[Jnc_maxNum] = 0, Jnc_ddSum1[Jnc_maxNum] = 0, Jnc_ddSum2[Jnc_maxNum] = 0;
-				Jnc_wdd[Jnc_maxNum].clear(), Jnc_wddSum1[Jnc_maxNum].clear(), Jnc_wddSum2[Jnc_maxNum].clear();
+				Jnc_ddlSum[Jnc_maxNum] = 0;
+				Jnc_lenSum[Jnc_maxNum] = 0;
+				Jnc_ddl[Jnc_maxNum] = 0;
+				Jnc_dd[Jnc_maxNum] = 0;
+				Jnc_ddSum1[Jnc_maxNum] = 0;
+				Jnc_ddSum2[Jnc_maxNum] = 0;
+				Jnc_wdd[Jnc_maxNum].clear();
+				Jnc_wddSum1[Jnc_maxNum].clear();
+				Jnc_wddSum2[Jnc_maxNum].clear();
 
 				for (auto road_it= outRoad.begin();road_it!= outRoad.end();road_it++)
 				{
@@ -9788,7 +9709,7 @@ void Calculation::OutputVisualData(ShapeFileAccessor &fileAccessor)
 
 		//输出一幅所有的道路图
 		shpFileName = folderPath + "/" + getOutFilePath2() + "_All.shp";
-		dbfFileName = folderPath + "\\" + getOutFilePath2() + "_All.dbf";
+		dbfFileName = folderPath + "/" + getOutFilePath2() + "_All.dbf";
 		outputNetAll(SHPT_ARC, "JncR", fileAccessor.Route, shpFileName, dbfFileName);
 
 		//输出多幅子图――――用唯一起点边ID标定
@@ -11307,6 +11228,9 @@ void Calculation::outputGeoSub(int nSHPType, std::string str, std::map<int, std:
 		idxMp["PathLen"] = idxCount;
 		idxCount += 1;
 
+		// Guard against an empty WDD list (no weight attributes),
+		// mirroring outputGeodesics().
+		if (!GeodesicsData[str].WDD.empty())
 		for (auto wgt_it = GeodesicsData[str].WDD[0].begin(); wgt_it != GeodesicsData[str].WDD[0].end(); wgt_it++) {
 			std::string fieldname = "WD" + wgt_it->first.substr(0, 8);
 			DBFAddField(hDBF, fieldname.c_str(), FTDouble, 20, 4);
@@ -11361,6 +11285,7 @@ void Calculation::outputGeoSub(int nSHPType, std::string str, std::map<int, std:
 					DBFWriteDoubleAttribute(hDBF, record, idxMp["DC"], GeodesicsData[str].DC[record]);
 					DBFWriteDoubleAttribute(hDBF, record, idxMp["DD"], GeodesicsData[str].DD[record]);
 					DBFWriteDoubleAttribute(hDBF, record, idxMp["DDL"], GeodesicsData[str].DDL[record]);
+					if (!GeodesicsData[str].WDD.empty())
 					for (auto wgt_it = GeodesicsData[str].WDD[0].begin(); wgt_it != GeodesicsData[str].WDD[0].end(); wgt_it++) {
 						std::string fieldname = "WD" + wgt_it->first.substr(0, 8);
 						DBFWriteDoubleAttribute(hDBF, record, idxMp[fieldname], GeodesicsData[str].WDD[record][wgt_it->first]);
@@ -11372,7 +11297,7 @@ void Calculation::outputGeoSub(int nSHPType, std::string str, std::map<int, std:
 				if (weight.size() > 0) {
 					for (auto wgt_it = GeodesicsData[str].Wgt[0].begin(); wgt_it != GeodesicsData[str].Wgt[0].end(); wgt_it++) {
 						std::string fieldname = "W" + wgt_it->first.substr(0, 9);
-						DBFWriteDoubleAttribute(hDBF, record, idxMp[fieldname], NetreachData[str].Wgt[record][wgt_it->first]);
+						DBFWriteDoubleAttribute(hDBF, record, idxMp[fieldname], GeodesicsData[str].Wgt[record][wgt_it->first]); // fixed: was NetreachData (copy-paste bug)
 					}
 				}
 
@@ -11585,7 +11510,7 @@ void Calculation::outputGeodesics(int nSHPType, std::string str, std::map<int, s
 		if (!weight.empty()) {
 			for (auto wgt_it = GeodesicsData[str].Wgt[0].begin(); wgt_it != GeodesicsData[str].Wgt[0].end(); wgt_it++) {
 				std::string fieldname = "W" + wgt_it->first.substr(0, 9);
-				DBFWriteDoubleAttribute(hDBF, record, idxMp[fieldname], NetreachData[str].Wgt[record][wgt_it->first]);
+				DBFWriteDoubleAttribute(hDBF, record, idxMp[fieldname], GeodesicsData[str].Wgt[record][wgt_it->first]); // fixed: was NetreachData (copy-paste bug)
 			}
 		}
 	}

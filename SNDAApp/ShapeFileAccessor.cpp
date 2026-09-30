@@ -13,7 +13,7 @@
 #include <math.h>
 #include <mutex>
 #include <cmath>
-#include <QDir>
+#include "dirutils.h"
 #include <iomanip>
 
 #define PI 3.141592653
@@ -712,20 +712,17 @@ inline int  ShapeFileAccessor::GetNodeNum(double x, double y) {
 
 	std::string key = convertDtoStr(x) + "," + convertDtoStr(y);
 
-	std::map<std::string, int>::iterator iter;
-
-	iter = mapNodes.find(key);
-
+	// The map is shared by all reader threads, so the whole
+	// find-or-insert must be atomic (previously the find was
+	// unsynchronised, which corrupted node numbering and could crash).
+	std::lock_guard<std::mutex> guard(lock);
+	auto iter = mapNodes.find(key);
 	if (iter != mapNodes.end()) {
-		return mapNodes[key];
+		return iter->second;
 	}
-	else {
-		lock.lock();
-		int nodeNum = int(mapNodes.size());
-		mapNodes.insert(std::pair<std::string, int>(key, nodeNum));
-		lock.unlock();
-		return nodeNum;
-	}
+	int nodeNum = int(mapNodes.size());
+	mapNodes.insert(std::pair<std::string, int>(key, nodeNum));
+	return nodeNum;
 
 }
 
@@ -733,18 +730,15 @@ inline int  ShapeFileAccessor::GetNodeNum2(int x, int y) {
 
 	std::string key = std::to_string(x) + "," + std::to_string(y);
 
-	std::map<std::string, int>::iterator iter;
-
-	iter = mapNodes2.find(key);
-
+	// Same shared-map race as GetNodeNum: lock the find-or-insert.
+	std::lock_guard<std::mutex> guard(lock);
+	auto iter = mapNodes2.find(key);
 	if (iter != mapNodes2.end()) {
-		return mapNodes2[key];
+		return iter->second;
 	}
-	else {
-		int nodeNum = int(mapNodes2.size());
-		mapNodes2.insert(std::pair<std::string, int>(key, nodeNum));
-		return nodeNum;
-	}
+	int nodeNum = int(mapNodes2.size());
+	mapNodes2.insert(std::pair<std::string, int>(key, nodeNum));
+	return nodeNum;
 
 }
 
@@ -862,9 +856,7 @@ void ShapeFileAccessor::Multi_thread_for_WriteFile(std::string filepath, Attribu
 	//}
 
 	//创建文件夹
-	//bool flag = CreateDirectory(filepath.c_str(), NULL);
-	QDir qFilePath = QString::fromLocal8Bit(filepath.c_str());
-	qFilePath.mkpath(QString::fromLocal8Bit(filepath.c_str()));
+	dirutils::makeDirs(filepath);
 
 	//增开一个detach线程写入shp文件,主线程不等待
 	std::thread thrd(&ShapeFileAccessor::multiWriteFile, filepath, filename, std::ref(Attributes));
