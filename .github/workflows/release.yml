@@ -89,6 +89,8 @@ jobs:
             QT5_ROOT=""
             BOOST_ROOT="/usr/include"
             CMAKE_EXTRA_ARGS=(
+              -DBUILD_SHARED_LIBS=OFF
+              -DCMAKE_SKIP_RPATH=ON
               -DCMAKE_C_FLAGS_RELEASE="-O0 -g0 -DNDEBUG"
               -DCMAKE_CXX_FLAGS_RELEASE="-O0 -g0 -DNDEBUG"
             )
@@ -181,6 +183,36 @@ jobs:
           test -x package/urconnect-cli
           package/urconnect-cli --version
 
+      - name: Check Linux package dependencies and startup
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          for executable in package/UrConnect package/urconnect-cli; do
+            dependencies="$(ldd "$executable")"
+            printf '%s\n' "$dependencies"
+            if grep -q 'not found' <<< "$dependencies"; then
+              echo "Missing dependency in $executable"
+              exit 1
+            fi
+            dynamic_section="$(readelf -d "$executable")"
+            if grep -Eq 'libshp|/home/runner/' <<< "$dynamic_section"; then
+              echo "Unpackaged Shapelib or build-machine path in $executable"
+              exit 1
+            fi
+          done
+          if readelf -d package/urconnect-cli | grep -q 'NEEDED.*Qt'; then
+            echo "The CLI must not depend on Qt"
+            exit 1
+          fi
+          set +e
+          QT_QPA_PLATFORM=offscreen timeout 5s package/UrConnect
+          result=$?
+          set -e
+          if [ "$result" -ne 124 ]; then
+            echo "Linux GUI exited before the startup smoke test finished (status $result)"
+            exit 1
+          fi
+
       - name: Add license and notices
         if: runner.os != 'Windows'
         shell: bash
@@ -194,6 +226,9 @@ jobs:
 
           The legacy standalone Windows desktop application remains in release v0.1.0. This release workflow provides a new Windows CLI; macOS and Linux packages remain experimental.
           EOF
+          if [ "$RUNNER_OS" = "Linux" ]; then
+            printf '\nLinux binaries are built and tested on Ubuntu 24.04 x64. The desktop app requires system Qt 5, OpenGL and GLU libraries; the CLI requires only the standard C/C++ runtime, not Qt or Shapelib DLLs.\n' >> package/README.txt
+          fi
 
       - name: Archive Unix package
         if: runner.os != 'Windows'
@@ -237,6 +272,8 @@ jobs:
           - Linux x64
 
           The macOS application, Linux application, and Windows CLI use the updated shared C++ analysis code. macOS and Linux packages remain marked experimental while cross-platform validation continues.
+
+          Linux binaries are built and tested on Ubuntu 24.04 x64. The desktop application requires system Qt 5, OpenGL and GLU libraries; the CLI does not require Qt or a separately installed Shapelib library.
           EOF
       - name: Publish GitHub release
         uses: softprops/action-gh-release@v2
