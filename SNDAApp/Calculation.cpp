@@ -5214,14 +5214,16 @@ void Calculation::calculateDDLbyDij(ShapeFileAccessor& fileAccessor) {
 		}
 		else {
 			for (auto MRLimit : MRLimitSet2) {
-				if (MRLimit == -1) outRoad.insert(fileAccessor.roadID.begin(), fileAccessor.roadID.end());
+				// P0-2/P0-3: reset per-MRLimit state for every iteration (incl. MRLimit == -1)
+				std::set<int>().swap(outRoad);
+				std::set<int>().swap(inRoad);
+				std::map<int, partInNode>().swap(partInLength);
+				std::queue<int> q;
+				std::vector<bool> visited(fileAccessor.roadID.size(), false);
+				if (MRLimit == -1) {
+					outRoad.insert(fileAccessor.roadID.begin(), fileAccessor.roadID.end());
+				}
 				else {
-					std::set<int>().swap(outRoad);
-					std::set<int>().swap(inRoad);
-					/*std::map<int, std::vector<double>>().swap(partIn);*/
-					std::map<int, partInNode>().swap(partInLength);
-					std::queue<int> q;
-					std::vector<bool> visited(fileAccessor.roadID.size());
 					//the startRoad can be totally cover. 
 					if (2 * MRLimit < fileAccessor.Length[startRoad]) {
 						outRoad.insert(startRoad); 
@@ -5276,10 +5278,9 @@ void Calculation::calculateDDLbyDij(ShapeFileAccessor& fileAccessor) {
 					std::map<std::string,std::map<int, double>> map = getMap(fileAccessor, startRoad, outRoad, partInLength, weight, std::vector<bool>(3, true));
 					ddMap = map["dd"];
 					ddlMap = map["ddl"];
-					
-				
-					double weight_turn_sum = 0, weight_sum = 0;
+
 					for (auto it = weight.begin(); it != weight.end(); it++) {
+						double weight_turn_sum = 0, weight_sum = 0;
 						wddMap = map[it->first];
 						for (const auto& pair : wddMap) {
 							weight_turn_sum += pair.first * pair.second;
@@ -5287,7 +5288,7 @@ void Calculation::calculateDDLbyDij(ShapeFileAccessor& fileAccessor) {
 						}
 						WDD_all[MRLimit][it->first][startRoad] = weight_turn_sum / weight_sum;
 					}
-					
+
 				}
 				else {
 					std::vector<bool> type = { true,true,false };
