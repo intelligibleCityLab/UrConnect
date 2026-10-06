@@ -5073,7 +5073,7 @@ void Calculation::Geo_calculateMR(ShapeFileAccessor &fileAccessor)
 }
 
 
-inline std::map<std::string, std::map<int, double>> getMap(ShapeFileAccessor& fileAccessor, int startRoad, std::set<int> validRoads, std::map<int, partInNode> partInLength, std::map<std::string, std::map<int, double>> weight, std::vector<bool> type) {
+inline std::map<std::string, std::map<int, double>> getMap(ShapeFileAccessor& fileAccessor, int startRoad, const std::set<int>& validRoads, const std::map<int, partInNode>& partInLength, const std::map<std::string, std::map<int, double>>& weight, const std::vector<bool>& type) {
 	std::map<std::string, std::map<int, double>> resultMap;
 	struct CompareSecond {
 		bool operator()(const std::pair<int, int>& p1, const std::pair<int, int>& p2) {
@@ -5118,20 +5118,34 @@ inline std::map<std::string, std::map<int, double>> getMap(ShapeFileAccessor& fi
 
 			// ddl
 			if (type[1]) {
-				if (partInLength.count(nowRoad)) {
-					resultMap["ddl"][turnCount] += partInLength[nowRoad].leftLength + partInLength[nowRoad].rightLength;
+				// partInLength and Length only store forward road IDs;
+				// normalize nowRoad (which may be a reverse-direction ID) so that
+				// reverse-direction visits to a boundary road also use its partial length.
+				int forwardRoad = nowRoad % fileAccessor.roadID.size();
+				auto partIt = partInLength.find(forwardRoad);
+				if (partIt != partInLength.end()) {
+					resultMap["ddl"][turnCount] += partIt->second.leftLength + partIt->second.rightLength;
 				}
 				else {
-					resultMap["ddl"][turnCount] += fileAccessor.Length[nowRoad];
+					auto lenIt = fileAccessor.Length.find(forwardRoad);
+					if (lenIt != fileAccessor.Length.end()) {
+						resultMap["ddl"][turnCount] += lenIt->second;
+					}
 				}
 			}
 
 			// wdd
 			if (type[2]) {
+				// weightMap only stores forward road IDs; normalize nowRoad so that
+				// reverse-direction visits to a road also contribute its weight.
+				int forwardRoadForWeight = nowRoad % fileAccessor.roadID.size();
 				for (const auto& weightPair : weight) {
 					const std::string& weightName = weightPair.first;
 					const std::map<int, double>& weightMap = weightPair.second;
-					resultMap[weightName][turnCount] += weightMap.find(nowRoad)->second;
+					auto weightIt = weightMap.find(forwardRoadForWeight);
+					if (weightIt != weightMap.end()) {
+						resultMap[weightName][turnCount] += weightIt->second;
+					}
 				}
 			}
 
