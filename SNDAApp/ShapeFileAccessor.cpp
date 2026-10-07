@@ -14,11 +14,15 @@
 #include <mutex>
 #include <cmath>
 #include <stdexcept>
+#include <exception>
+#include <memory>
 #include "dirutils.h"
 #include <iomanip>
 
 #ifdef _WIN32
+#ifndef NOMINMAX
 #define NOMINMAX  // 阻止 windows.h 把 min/max 定义成宏，避免破坏 std::min/std::max
+#endif
 #include <windows.h>
 #endif
 

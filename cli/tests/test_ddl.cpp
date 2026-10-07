@@ -137,6 +137,20 @@ void boundaryAndWeightTests() {
     compare(right, combined);
 }
 
+void unequalLengthTest() {
+    ShapeFileAccessor accessor;
+    prepare(accessor, {{-10, 0, 0, 0}, {0, 0, 10, 0},
+                       {0, -20, 0, 0}, {0, 0, 0, 30}});
+    Calculation calculation;
+    initialize(calculation, accessor, "n");
+    calculation.calculateDDL(accessor);
+    for (int road = 0; road < 4; ++road) {
+        near(calculation.DD_all.at(-1).at(road), 0.5, "unequal cross DD");
+        near(calculation.DDL_all.at(-1).at(road), road < 2 ? 5.0 / 7.0 : 2.0 / 7.0,
+             "DDL uses actual lengths, not segment counts");
+    }
+}
+
 void realNetworkTests(const std::string& path) {
     ShapeFileAccessor accessor;
     AttributesData attributes;
@@ -190,6 +204,7 @@ int main(int argc, char** argv) {
             throw std::runtime_error("Importer unexpectedly accepted malformed input");
         }
         crossTests();
+        unequalLengthTest();
         boundaryAndWeightTests();
         if (argc == 2) realNetworkTests(argv[1]);
         std::cout << "DDL cross, orientation, fractional-length, boundary, radius, weight and worker tests passed\n";

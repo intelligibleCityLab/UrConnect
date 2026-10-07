@@ -2,7 +2,7 @@
 
 ## UrConnect 只能在 Windows 上运行吗？
 
-不是。Windows 是 v0.1.0 的主要发布目标，macOS/Linux 包以 experimental 构建形式提供。核心分析代码在各平台共享；experimental 标签反映的是打包和验证状态。
+不是。Windows 是 v0.2.1 的主要发布目标，macOS/Linux 包以 experimental 构建形式提供。核心分析代码在各平台共享；experimental 标签反映的是打包和验证状态。
 
 ## 软件能编辑街道线网吗？
 

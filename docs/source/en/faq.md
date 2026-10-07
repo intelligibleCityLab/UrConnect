@@ -2,7 +2,7 @@
 
 ## Is UrConnect only for Windows?
 
-No. Windows is the primary v0.1.0 release target, and macOS/Linux packages are available as experimental builds. The core analysis code is shared across platforms; the experimental label reflects packaging and validation status.
+No. Windows is the primary v0.2.1 release target, and macOS/Linux packages are available as experimental builds. The core analysis code is shared across platforms; the experimental label reflects packaging and validation status.
 
 ## Does UrConnect edit street geometry?
 

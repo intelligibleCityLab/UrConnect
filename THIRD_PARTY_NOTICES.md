@@ -26,4 +26,4 @@ UrConnect uses header-only components from the Boost C++ Libraries. Boost is dis
 
 ## spdlog and fmt
 
-UrConnect uses spdlog 1.13.0 and its bundled fmt 9.1.0 for logging. Both use the MIT license. Their copyright and license texts are retained in `licenses/spdlog-LICENSE.txt` and `licenses/fmt-LICENSE.txt` and included with release packages.
+UrConnect uses spdlog 1.15.3 and its bundled fmt 11.2.0 for logging. Both use the MIT license. Their copyright and license texts are retained in `licenses/spdlog-LICENSE.txt` and `licenses/fmt-LICENSE.txt` and included with release packages.
