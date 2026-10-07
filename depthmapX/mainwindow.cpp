@@ -4904,19 +4904,18 @@ void MainWindow::subsetProgressCount() {
 
 	//计时结束
 	T_timeEnd = clock();
-	int endtime = (double)(T_timeEnd - T_timeBegin) / double(CLOCKS_PER_SEC);
-	std::string str = std::to_string(endtime) + "s";
-	time_qstr = QString(QString::fromLocal8Bit(str.c_str()));
+	double endtime_sec = (double)(T_timeEnd - T_timeBegin) / double(CLOCKS_PER_SEC);
+	QString str = QString::number(endtime_sec, 'f', 3) + "s";
+	time_qstr = str;
 
 	//set_run_start(false);
 	set_needOver(false);
 	set_calculate_over(true);
-
-	//QMessageBox::information(NULL, "Run Time", str.c_str());
+	URC_LOG_INFO("calculate over: %s", str.toUtf8().constData());
 
 	process_pos = this->nMax;
-	process_str = "calculate over: " + QString(QString::fromLocal8Bit(str.c_str()));
-
+	process_str = "calculate over: " + str;
+	
 	//更新进度条
 	emit(this->pDisplaydow->ui->Button_start_scan->clicked());
 
@@ -5147,13 +5146,13 @@ void MainWindow::progressCount()
 
 	//计时结束
 	T_timeEnd = clock();
-	int endtime = (double)(T_timeEnd - T_timeBegin) / double(CLOCKS_PER_SEC);
-	std::string str = std::to_string(endtime) + "s";
-	time_qstr = QString(QString::fromLocal8Bit(str.c_str()));
-	//QMessageBox::information(NULL, "Run Time", str.c_str());
+	double endtime_sec = (double)(T_timeEnd - T_timeBegin) / double(CLOCKS_PER_SEC);
+	QString str = QString::number(endtime_sec, 'f', 3) + "s";
+	time_qstr = str;
+	URC_LOG_INFO("calculate over2: {}", str.toUtf8().constData());
 
 	process_pos = this->nMax;
-	process_str = "calculate over: " + QString(QString::fromLocal8Bit(str.c_str()));
+	process_str = "calculate over: " + str;
 
 	//更新进度条
 	emit(this->pDisplaydow->ui->Button_start_scan->clicked());
