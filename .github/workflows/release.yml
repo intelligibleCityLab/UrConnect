@@ -5,12 +5,18 @@ on:
     tags:
       - "v*"
   workflow_dispatch:
+    inputs:
+      repair_windows_release:
+        description: 'Existing release tag to repair Windows packaging only (leave empty for a full build)'
+        required: false
+        default: ''
 
 permissions:
   contents: write
 
 jobs:
   build:
+    if: ${{ !inputs.repair_windows_release }}
     name: Build ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
     strategy:
@@ -130,6 +136,7 @@ jobs:
           Copy-Item $cli package/
           & windeployqt --release --compiler-runtime --no-translations package/UrConnect.exe
           if ($LASTEXITCODE -ne 0) { throw "Qt Windows deployment failed" }
+          & ./scripts/bundle_windows_runtime.ps1
 
       - name: Check Windows desktop startup
         if: runner.os == 'Windows'
@@ -331,3 +338,49 @@ jobs:
           overwrite_files: false
           draft: false
           prerelease: false
+
+  repair-windows:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.repair_windows_release != '' }}
+    runs-on: windows-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPAIR_RELEASE: ${{ inputs.repair_windows_release }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: Download existing release packages
+        shell: pwsh
+        run: |
+          if ($env:REPAIR_RELEASE -notmatch '^v\d+\.\d+\.\d+$') { throw "Expected a semantic version tag" }
+          gh release download $env:REPAIR_RELEASE --dir assets
+          if ($LASTEXITCODE -ne 0) { throw "Release download failed" }
+          $zip = "assets/UrConnect-$env:REPAIR_RELEASE-windows-x64.zip"
+          Expand-Archive $zip package
+      - name: Bundle and verify desktop runtime
+        shell: pwsh
+        run: |
+          & ./scripts/bundle_windows_runtime.ps1
+          $version = & ./package/urconnect-cli.exe --version
+          if ($LASTEXITCODE -ne 0 -or $version -notlike "urconnect-cli $($env:REPAIR_RELEASE.Substring(1)) *") {
+            throw "Release binary version does not match the requested tag"
+          }
+          $env:QT_QPA_PLATFORM = "offscreen"
+          $process = Start-Process -FilePath "$PWD/package/UrConnect.exe" -PassThru
+          try {
+            Start-Sleep -Seconds 5
+            $process.Refresh()
+            if ($process.HasExited) { throw "Repaired desktop failed to start" }
+          } finally {
+            if (-not $process.HasExited) { Stop-Process -Id $process.Id -Force }
+          }
+      - name: Update package and checksums
+        shell: pwsh
+        run: |
+          $zip = "assets/UrConnect-$env:REPAIR_RELEASE-windows-x64.zip"
+          Compress-Archive -Path package/* -DestinationPath $zip -Force
+          $lines = Get-ChildItem assets -File | Where-Object { $_.Name -ne 'SHA256SUMS.txt' } |
+            Sort-Object Name | ForEach-Object {
+              "$((Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower())  $($_.Name)"
+            }
+          [IO.File]::WriteAllText("$PWD/assets/SHA256SUMS.txt", ($lines -join "`n") + "`n", [Text.UTF8Encoding]::new($false))
+          gh release upload $env:REPAIR_RELEASE $zip assets/SHA256SUMS.txt --clobber
+          if ($LASTEXITCODE -ne 0) { throw "Release package update failed" }
