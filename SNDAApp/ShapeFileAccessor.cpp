@@ -1,5 +1,6 @@
 ﻿#include "stdafx.h"
 #include "ShapeFileAccessor.h"
+#include "Logger.h"
 #include <map>
 #include <vector>
 #include <cmath>
@@ -65,6 +66,7 @@ inline double calculateDistance(double x, double y, double x1, double y1) {
 
 void ShapeFileAccessor::init(std::string filepath, AttributesData &Attributes)
 {
+	URC_LOG_DEBUG("ShapeFileAccessor::init: {}", filepath);
 	m_filepath = filepath;
 	myAttributes = Attributes;
 }
@@ -126,9 +128,10 @@ inline std::vector<int> get_index_roads(std::string index_str) {
 	return { road_1,road_2 };
 }
 
-int ShapeFileAccessor::generateTXT(std::string shpfilename, std::string txtFileName, std::string idFieldIndex, 
+int ShapeFileAccessor::generateTXT(std::string shpfilename, std::string txtFileName, std::string idFieldIndex,
 	int last_count, std::map<int, int> &Ref_to_Id, std::map<int, int> &Id_to_Ref)
 {
+	URC_LOG_INFO("generateTXT: shp={}, txt={}, idField={}", shpfilename, txtFileName, idFieldIndex);
 	extern int loadedCount;
 	loadedCount = 0;
 
@@ -144,6 +147,7 @@ int ShapeFileAccessor::generateTXT(std::string shpfilename, std::string txtFileN
 	shapeType = shapefile.GetType();
 
 	if (result != 0) {
+		URC_LOG_ERROR("generateTXT: Failed to read shape file: {}", shpfilename);
 		AfxMessageBox(_T("Read Shape File failed"), MB_OK | MB_ICONERROR);
 		return -1;
 	}
@@ -153,15 +157,17 @@ int ShapeFileAccessor::generateTXT(std::string shpfilename, std::string txtFileN
 		int fieldIndex;
 		if (idFieldIndex != "FID") {
 			if (hDBF == NULL) {
+				URC_LOG_ERROR("generateTXT: Failed to open DBF file: {}", dbFilePath);
 				AfxMessageBox(_T("Read dbf File failed"), MB_OK | MB_ICONERROR);
 				return -1;
 			}
 			fieldIndex = DBFGetFieldIndex(hDBF, idFieldIndex.c_str());
 			if (fieldIndex < 0) {
+				URC_LOG_ERROR("generateTXT: Field '{}' not found in DBF: {}", idFieldIndex, dbFilePath);
 				AfxMessageBox(_T("Read dbf File failed"), MB_OK | MB_ICONERROR);
 				return -1;
 			}
-		}		
+		}
 
 		int count = shapefile.GetEntityCount();
 
@@ -582,6 +588,7 @@ void ShapeFileAccessor::getCoordinateData(std::string shpfilename, std::vector<s
 
 void ShapeFileAccessor::BaseInputError(std::string str)
 {
+	URC_LOG_ERROR("BaseInputError: {}", str);
 	std::string baseStr = " Input Error. Please Check";
 	//std::string strT = str + baseStr;
 	std::string strT = str;
@@ -593,6 +600,7 @@ void ShapeFileAccessor::BaseInputError(std::string str)
 
 void ShapeFileAccessor::FileNotExist(std::string str)
 {
+	URC_LOG_ERROR("FileNotExist: {}", str);
 	AfxMessageBox(_T("File not exist, please check"), MB_OK | MB_ICONERROR);
 }
 

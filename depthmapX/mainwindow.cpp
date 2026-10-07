@@ -1,4 +1,4 @@
-﻿// Copyright (C) 2011-2012, Tasos Varoudis
+// Copyright (C) 2011-2012, Tasos Varoudis
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -23,6 +23,7 @@
 #include "dialogs/AboutDlg.h"
 #include "dialogs/settings/settingsdialog.h"
 #include "depthmapX/CSVProcess.h"
+#include "Logger.h"
 
 #include <QtGui>
 #include <QDesktopServices>
@@ -5531,6 +5532,9 @@ void MainWindow::adaptiveWidth() {
 
 MainWindow::MainWindow(const QString &fileToLoad, Settings &settings) : mSettings(settings)
 {
+	URC_LOG_INFO("MainWindow constructor entered. File to load: {}",
+	             fileToLoad.toUtf8().constData());
+
 	m_loc = std::locale::global(std::locale(""));
 	m_treeDoc = NULL;
 	generateIndex();
@@ -6831,7 +6835,8 @@ void MainWindow::saveAllAttributesToCSV() {
 	QFile file(outFileName);
 
 	if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
-		std::cerr << "Error opening file for writing: " << outFileName.toStdString() << std::endl;
+		std::cerr << "Error opening file for writing: " << outFileName.toUtf8().constData() << std::endl;
+		URC_LOG_ERROR("Failed to open CSV file for writing: {}", outFileName.toUtf8().constData());
 		return;
 	}
 
@@ -7717,11 +7722,13 @@ void MainWindow::OnFileNew()
 
 void MainWindow::loadFile(QString fileName)
 {
+	URC_LOG_INFO("Loading file: {}", fileName.toUtf8().constData());
 	//查找是否已经存在对应文件名的Map可视化子窗口
 	QMdiSubWindow *existing = findMapView(fileName);
 
 	//若存在，则返回窗口
 	if (existing) {
+		URC_LOG_DEBUG("File already open in subwindow, activating: {}", fileName.toUtf8().constData());
 		mdiArea->setActiveSubWindow(existing);
 		return;
 	}
@@ -7741,10 +7748,12 @@ void MainWindow::loadFile(QString fileName)
 		child->show();						//对Map窗口的加载数据进行输出显示
 		OnFocusGraph(child->getGraphDoc(), QGraphDoc::CONTROLS_LOADALL);
 		setCurrentFile(fileName);
+		URC_LOG_INFO("File loaded successfully: {}", fileName.toUtf8().constData());
 	}
 	else
 	{
 		child->close();
+		URC_LOG_ERROR("Failed to load file: {}", fileName.toUtf8().constData());
 		QMessageBox::warning(this, "Failed to load", QString("Failed to load file ") + fileName, QMessageBox::Ok, QMessageBox::Ok);
 	}
 }
@@ -7769,6 +7778,7 @@ std::string getShpFileName(std::string filepath) {
 
 void MainWindow::OnFileOpen()
 {
+	URC_LOG_INFO("OnFileOpen() triggered");
 	const QString previousProcessStr = process_str;
 	process_str = "Reading, please wait...";
 	this->locationLabel->setText(process_str);
@@ -7917,6 +7927,7 @@ void MainWindow::OnFileOpen()
 			readOver = true;
 		}
 		else {	//警告：不受支持的文件类型，请重新选择
+			URC_LOG_WARN("Unrecognised file format: {}", fileNameStr);
 			QMessageBox::warning(this, tr("Warning"), tr("Unrecognised file format. Sorry, unable to import this file."),
 				QMessageBox::Ok, QMessageBox::Ok);
 

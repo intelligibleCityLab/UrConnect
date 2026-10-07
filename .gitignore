@@ -39,3 +39,5 @@ debug/
 
 # Local source material used to prepare public documentation
 /images/
+logs/
+_deps/
