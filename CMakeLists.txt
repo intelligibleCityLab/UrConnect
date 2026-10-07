@@ -104,9 +104,6 @@ set(SPDLOG_BUILD_EXAMPLE OFF CACHE BOOL "Build spdlog examples" FORCE)
 set(SPDLOG_BUILD_TESTS OFF CACHE BOOL "Build spdlog tests" FORCE)
 set(SPDLOG_BUILD_BENCH OFF CACHE BOOL "Build spdlog benchmarks" FORCE)
 set(SPDLOG_INSTALL OFF CACHE BOOL "Generate spdlog install target" FORCE)
-# 关闭全局 BUILD_SHARED_LIBS，否则 spdlog 会被强制构建为 SHARED DLL，
-# 与应用程序的静态 CRT (/MT) 产生 ABI 不匹配
-set(BUILD_SHARED_LIBS OFF CACHE BOOL "Build shared libs" FORCE)
 FetchContent_MakeAvailable(spdlog)
 
 # 子目录构建
