@@ -162,7 +162,9 @@ int ShapeFileAccessor::generateTXT(std::string shpfilename, std::string txtFileN
 	}
 	else {
 		DBFHandle	hDBF;
-		hDBF = DBFOpen(dbFilePath.c_str(), "rb+");
+		hDBF = DBFOpen(dbFilePath.c_str(), "rb");
+		if (!hDBF) throw std::runtime_error("Cannot open DBF: " + dbFilePath);
+		std::unique_ptr<DBFInfo, decltype(&DBFClose)> dbfGuard(hDBF, DBFClose);
 		int fieldIndex;
 		if (idFieldIndex != "FID") {
 			if (hDBF == NULL) {
@@ -286,7 +288,9 @@ int ShapeFileAccessor::generateFileStream(std::string shpfilename, std::string i
 	}
 	else {
 		DBFHandle	hDBF;
-		hDBF = DBFOpen(dbFilePath.c_str(), "rb+");
+		hDBF = DBFOpen(dbFilePath.c_str(), "rb");
+		if (!hDBF) throw std::runtime_error("Cannot open DBF: " + dbFilePath);
+		std::unique_ptr<DBFInfo, decltype(&DBFClose)> dbfGuard(hDBF, DBFClose);
 		int fieldIndex;
 		if (idFieldIndex != "FID") {
 			if (hDBF == NULL) {
@@ -422,7 +426,9 @@ int ShapeFileAccessor::generateDispalyStream(std::string shpfilename, std::strin
 	
 	DBFHandle	hDBF;
 	auto path = dbFilePath.c_str();
-	hDBF = DBFOpen(path, "rb+");
+	hDBF = DBFOpen(path, "rb");
+	if (!hDBF) throw std::runtime_error("Cannot open DBF: " + dbFilePath);
+	std::unique_ptr<DBFInfo, decltype(&DBFClose)> dbfGuard(hDBF, DBFClose);
 	int fieldIndex;
 	if (idFieldIndex != "FID") {
 		if (hDBF == NULL) {

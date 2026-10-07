@@ -195,13 +195,22 @@ int main(int argc, char** argv) {
             ShapeFileAccessor accessor;
             AttributesData attributes;
             const bool missing = std::string(argv[1]) == "--missing-dbf";
-            try {
-                accessor.multiThreadReadFile(argv[2], missing ? "FID" : "missing_field", attributes);
-            } catch (const std::runtime_error&) {
-                std::cout << "Importer worker error propagated without terminating the process\n";
-                return 0;
+            int caught = 0;
+            for (bool worker : {false, true}) {
+                try {
+                    const std::string field = missing ? "FID" : "missing_field";
+                    if (worker) accessor.multiThreadReadFile(argv[2], field, attributes);
+                    else {
+                        std::map<int, int> refs, ids;
+                        accessor.generateDispalyStream(argv[2], field, attributes, refs, ids);
+                    }
+                } catch (const std::runtime_error&) {
+                    ++caught;
+                }
             }
-            throw std::runtime_error("Importer unexpectedly accepted malformed input");
+            if (caught != 2) throw std::runtime_error("Importer unexpectedly accepted malformed input");
+            std::cout << "GUI and worker importer errors propagated without terminating the process\n";
+            return 0;
         }
         crossTests();
         unequalLengthTest();
