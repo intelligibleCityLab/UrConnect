@@ -1,0 +1,17 @@
+file(REMOVE_RECURSE "${TEST_ROOT}")
+file(MAKE_DIRECTORY "${TEST_ROOT}")
+execute_process(COMMAND "${NETWORK_TOOL}" create "${TEST_ROOT}/network" RESULT_VARIABLE result)
+if(NOT result EQUAL 0)
+    message(FATAL_ERROR "Cannot create importer test fixture")
+endif()
+execute_process(COMMAND "${ENGINE_TEST}" --invalid-field "${TEST_ROOT}/network.shp"
+    RESULT_VARIABLE result TIMEOUT 20)
+if(NOT result EQUAL 0)
+    message(FATAL_ERROR "Invalid-field import did not return a recoverable error: ${result}")
+endif()
+file(REMOVE "${TEST_ROOT}/network.dbf")
+execute_process(COMMAND "${ENGINE_TEST}" --missing-dbf "${TEST_ROOT}/network.shp"
+    RESULT_VARIABLE result TIMEOUT 20)
+if(NOT result EQUAL 0)
+    message(FATAL_ERROR "Missing DBF did not return a recoverable error: ${result}")
+endif()

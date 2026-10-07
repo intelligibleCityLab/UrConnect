@@ -894,13 +894,14 @@ void ShapeFileAccessor::Multi_thread_for_ReadFile(ShapeFileAccessor *temp, std::
 
 	//获取cpu最大提供线程数，超了会降低效率
 	int threadMaxNum = std::thread::hardware_concurrency();
-	thread_num = std::min(threadMaxNum, cpu_count) * 2;
+	thread_num = std::max(1, std::min(threadMaxNum, cpu_count)) * 2;
 
 	//准备接数据结构
 	std::vector<int> StartPosVec, ReadLengthVec;
 	//计划各线程读取range
 	Shapefile shapefile;
-	shapefile.Open(shpfilename);
+	if (shapefile.Open(shpfilename) != 0)
+		throw std::runtime_error("Cannot open Shapefile: " + shpfilename);
 	int total_count = shapefile.GetEntityCount();
 	shapefile.Close();
 	int single_count = total_count / thread_num;
@@ -923,42 +924,42 @@ void ShapeFileAccessor::Multi_thread_for_ReadFile(ShapeFileAccessor *temp, std::
 	int cpu_num = cpu_count;
 	long long cpu_pos = static_cast<long long>(pow(2, std::max(1, cpu_num - 1)));
 
-	//按边顺序依次启动
-	for (int i = 0; i < thread_num; i++)
-	{
-		std::thread thrd(&ShapeFileAccessor::multiReadFile, temp, shpfilename,idFieldIndex, i, StartPosVec[i], ReadLengthVec[i],cpu_pos);
-		thrd.detach();
-
-		cpu_pos = cpu_pos >> 1;
-		if (cpu_pos == 0)
-		{
-			cpu_pos = static_cast<long long>(pow(2, std::max(1, cpu_num - 1)));
-		}
-	}
-
-	//循环等待全部结束，拼接文件流
-	while (true) {
-		bool isAllFinished = true;
-		for (int i = 0; i < thread_num; i++){
-			{
-				std::lock_guard<std::mutex> flagsLock(FlagsMutex); //2023-10-12 xlj 上锁
-				if (!Flags[i])
-					isAllFinished = false;
-			}
-			
-		}
-		if (isAllFinished) {	//文件流拼接完毕，但是Attributes这里还需要拼接
-			Attributes.AttributesNames = AttributesDataVec[0].AttributesNames;
-			Attributes.AttributesDouble = AttributesDataVec[0].AttributesDouble;
-			for (int i = 1; i < thread_num; i++) {
-				for (auto it = Attributes.AttributesDouble.begin(); it != Attributes.AttributesDouble.end(); it++) {
-					it->second.insert(AttributesDataVec[i].AttributesDouble[it->first].begin(), AttributesDataVec[i].AttributesDouble[it->first].end());
-				}
-			}
-
-			break;
-		}
-	}
+    std::vector<std::thread> workers;
+    std::exception_ptr failure;
+    std::mutex failureMutex;
+    try {
+        for (int i = 0; i < thread_num; ++i) {
+            const long long mask = cpu_pos;
+            workers.emplace_back([&, i, mask] {
+                try {
+                    multiReadFile(temp, shpfilename, idFieldIndex, i,
+                                  StartPosVec[i], ReadLengthVec[i], mask);
+                } catch (...) {
+                    {
+                        std::lock_guard<std::mutex> lock(failureMutex);
+                        if (!failure) failure = std::current_exception();
+                    }
+                    // Release later workers waiting to append their input in order.
+                    std::lock_guard<std::mutex> lock(FlagsMutex);
+                    Flags[i] = true;
+                }
+            });
+            cpu_pos >>= 1;
+            if (!cpu_pos) cpu_pos = static_cast<long long>(pow(2, std::max(1, cpu_num - 1)));
+        }
+    } catch (...) {
+        for (auto& worker : workers) worker.join();
+        throw;
+    }
+    for (auto& worker : workers) worker.join();
+    if (failure) std::rethrow_exception(failure);
+    Attributes = AttributesDataVec[0];
+    for (int i = 1; i < thread_num; ++i) {
+        for (auto& field : Attributes.AttributesDouble) {
+            const auto& values = AttributesDataVec[i].AttributesDouble[field.first];
+            field.second.insert(values.begin(), values.end());
+        }
+    }
 }
 
 void ShapeFileAccessor::multiThreadCalculateAngles(ShapeFileAccessor *temp) {
@@ -1486,7 +1487,9 @@ void ShapeFileAccessor::multiReadFile(ShapeFileAccessor *temp, std::string shpfi
 	}
 
 	DBFHandle	hDBF;
-	hDBF = DBFOpen(dbFilePath.c_str(), "rb+");
+	hDBF = DBFOpen(dbFilePath.c_str(), "rb");
+	if (!hDBF) throw std::runtime_error("Cannot open DBF: " + dbFilePath);
+	std::unique_ptr<DBFInfo, decltype(&DBFClose)> dbfGuard(hDBF, DBFClose);
 	int fieldIndex;
 
 	int count = shapefile.GetEntityCount();

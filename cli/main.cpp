@@ -865,6 +865,19 @@ int runOd(const Options &opts) {
 } // namespace
 
 int main(int argc, char **argv) {
+    struct LogGuard {
+        ~LogGuard() { UrConnect::Logger::instance().shutdown(); }
+    } logGuard;
+    if (const char* directory = std::getenv("URCONNECT_LOG_DIR")) {
+        UrConnect::LoggerConfig config;
+        config.logDir = directory;
+        config.consoleEnabled = false;
+        config.asyncEnabled = false;
+        if (!UrConnect::Logger::instance().init(config)) {
+            std::cerr << "Error: cannot initialize URCONNECT_LOG_DIR logging\n";
+            return 2;
+        }
+    }
     try {
         Options opts;
         std::string error;
@@ -908,6 +921,7 @@ int main(int argc, char **argv) {
         std::cerr << kUsage << std::endl;
         return 1;
     } catch (const std::exception &exception) {
+        URC_LOG_ERROR("CLI analysis failed: {}", exception.what());
         std::cerr << "Error: " << exception.what() << std::endl;
         return 2;
     } catch (...) {

@@ -1,9 +1,9 @@
 # UrConnect 项目构建配置
-cmake_minimum_required(VERSION 3.14.0)
+cmake_minimum_required(VERSION 3.15.0)
 if(POLICY CMP0091)
     cmake_policy(SET CMP0091 NEW)
 endif()
-project(UrConnect VERSION 0.2.0)
+project(UrConnect VERSION 0.2.1)
 
 include(CTest)
 option(URCONNECT_BUILD_GUI "Build the Qt desktop application" ON)
@@ -83,12 +83,6 @@ string(TIMESTAMP APP_DATE %Y-%m-%d)
 configure_file("${CMAKE_SOURCE_DIR}/version_defs.h.in" "${CMAKE_BINARY_DIR}/version_defs.h" @ONLY)
 
 # Shapelib and the CLI can be built without Qt for headless CI and servers.
-if(MSVC)
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT")
-    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MT")
-endif()
-
-# Shapelib and the CLI can be built without Qt for headless CI and servers.
 
 # ============ 3rd Party Dependencies: spdlog  ============
 # FetchContent downloads spdlog（header-only mode）
@@ -106,6 +100,7 @@ set(SPDLOG_BUILD_TESTS OFF CACHE BOOL "Build spdlog tests" FORCE)
 set(SPDLOG_BUILD_BENCH OFF CACHE BOOL "Build spdlog benchmarks" FORCE)
 set(SPDLOG_INSTALL OFF CACHE BOOL "Generate spdlog install target" FORCE)
 FetchContent_MakeAvailable(spdlog)
+set_target_properties(spdlog PROPERTIES EXCLUDE_FROM_ALL TRUE)
 
 add_subdirectory(SNDAApp/lib)
 add_subdirectory(cli)

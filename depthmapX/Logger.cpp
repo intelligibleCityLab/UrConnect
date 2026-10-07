@@ -27,8 +27,6 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
-#include <QDir>
-#include <QString>
 #endif
 
 namespace UrConnect {
@@ -169,7 +167,7 @@ bool Logger::init(const LoggerConfig& config) {
         auto dailySink = std::make_shared<spdlog::sinks::daily_file_sink_mt>(
             dailyFilePath,
             config.dailyRotationHour,
-            config.dailyRotationMinute);
+            config.dailyRotationMinute, false, config.dailyMaxDays);
         dailySink->set_level(static_cast<spdlog::level::level_enum>(config.level));
         sinks.push_back(dailySink);
 
@@ -290,9 +288,9 @@ void Logger::flush() {
 // 便捷日志接口实现
 #define URC_DEFINE_LOG_METHOD(LEVEL_NAME, SPDLOG_FUNC) \
     void Logger::LEVEL_NAME(const std::string& msg) { \
-        if (!m_initialized) return; \
         try { \
-            if (m_logger) m_logger->SPDLOG_FUNC(msg); \
+            auto logger = getLogger(); \
+            if (logger) logger->SPDLOG_FUNC(msg); \
         } catch (...) {} \
     }
 

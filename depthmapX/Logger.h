@@ -84,7 +84,10 @@ public:
     void shutdown();
 
     // Check if the logging system is initialized
-    bool isInitialized() const { return m_initialized; }
+    bool isInitialized() const {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        return m_initialized;
+    }
 
     // Set log level
     void setLevel(LogLevel level);
@@ -132,10 +135,10 @@ public:
     // Generic log interface (formatted)
     template<typename... Args>
     void log(LogLevel level, const char* fmt, const Args&... args) {
-        if (!m_initialized) return;
         try {
-            if (m_logger) {
-                m_logger->log(static_cast<spdlog::level::level_enum>(level),
+            auto logger = getLogger();
+            if (logger) {
+                logger->log(static_cast<spdlog::level::level_enum>(level),
                               fmt, args...);
             }
         } catch (...) {
@@ -144,7 +147,10 @@ public:
     }
 
     // Get underlying spdlog logger (advanced usage)
-    std::shared_ptr<spdlog::logger> getLogger() const { return m_logger; }
+    std::shared_ptr<spdlog::logger> getLogger() const {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        return m_initialized ? m_logger : nullptr;
+    }
 
 private:
     Logger() = default;

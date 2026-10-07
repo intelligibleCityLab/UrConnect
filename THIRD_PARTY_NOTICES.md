@@ -23,3 +23,7 @@ The UrConnect desktop application uses dynamically linked Qt 5 modules distribut
 ## Boost
 
 UrConnect uses header-only components from the Boost C++ Libraries. Boost is distributed under the Boost Software License 1.0, available from <https://www.boost.org/LICENSE_1_0.txt>.
+
+## spdlog and fmt
+
+UrConnect uses spdlog 1.13.0 and its bundled fmt 9.1.0 for logging. Both use the MIT license. Their copyright and license texts are retained in `licenses/spdlog-LICENSE.txt` and `licenses/fmt-LICENSE.txt` and included with release packages.

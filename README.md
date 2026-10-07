@@ -47,7 +47,7 @@ The documentation is built as Sphinx HTML pages with a left navigation, page tab
 
 ## Installation
 
-The source version is 0.2.0. Check [GitHub Releases](https://github.com/intelligibleCityLab/UrConnect/releases) for published packages. The existing standalone Windows desktop application remains in the v0.1.0 release; it is not relabelled as 0.2.0. macOS and Linux packages remain experimental while cross-platform validation continues.
+The source version is 0.2.1. Check [GitHub Releases](https://github.com/intelligibleCityLab/UrConnect/releases) for published packages. The Windows ZIP contains a rebuilt desktop application and its Qt runtime. macOS and Linux packages remain experimental while cross-platform validation continues.
 
 Build from source:
 
@@ -86,6 +86,8 @@ urconnect-cli od network.shp --pairs pairs.csv
 
 Run `urconnect-cli --help` for the full option list. Whole-network results are appended as attribute columns to the input `.dbf` (same field names as the GUI); `netreach` and `od` write route shapefiles next to the input; `od --pairs` additionally writes a result CSV (`<pairs>_MR.csv`).
 
+Set `URCONNECT_LOG_DIR` to enable timestamped CLI file logging without changing its standard output. Desktop logs are stored in the user's application-data directory, not the installation directory. Elapsed analysis time uses a monotonic wall clock with millisecond resolution.
+
 For a CLI-only build without Qt:
 
 ```bash
@@ -93,7 +95,7 @@ cmake -S . -B build -DURCONNECT_BUILD_GUI=OFF -DBOOST_ROOT=/path/to/boost
 cmake --build build --config Release --target urconnect-cli
 ```
 
-For v0.2.0, the release workflow packages the standalone `urconnect-cli` executable with the macOS and Linux applications and produces a separate `urconnect-cli-windows-x64.exe` asset for Windows. The CLI statically links the bundled Shapelib implementation and does not require Qt or a display server.
+The v0.2.1 release packages the desktop application and `urconnect-cli` for Windows, macOS and Linux, with a separate `urconnect-cli-windows-x64.exe` asset for Windows. The CLI statically links the bundled Shapelib implementation and does not require Qt or a display server.
 
 ## Tests
 

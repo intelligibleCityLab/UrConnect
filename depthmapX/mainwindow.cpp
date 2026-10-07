@@ -27,6 +27,7 @@
 
 #include <QtGui>
 #include <QDesktopServices>
+#include <QElapsedTimer>
 #include <QtWidgets/QMdiArea>
 #include <QtWidgets/QDockWidget>
 #include <QtWidgets/QToolButton>
@@ -117,19 +118,19 @@ inline int GetSystemMetrics(int metric)
 	const QRect geometry = screen ? screen->availableGeometry() : QRect(0, 0, 1920, 1080);
 	return metric == SM_CYSCREEN ? geometry.height() : geometry.width();
 }
+#endif
 template <typename A, typename B>
-inline typename std::common_type<A, B>::type min(A a, B b)
+static inline typename std::common_type<A, B>::type min(A a, B b)
 {
 	typedef typename std::common_type<A, B>::type Result;
 	return a < b ? static_cast<Result>(a) : static_cast<Result>(b);
 }
 template <typename A, typename B>
-inline typename std::common_type<A, B>::type max(A a, B b)
+static inline typename std::common_type<A, B>::type max(A a, B b)
 {
 	typedef typename std::common_type<A, B>::type Result;
 	return a > b ? static_cast<Result>(a) : static_cast<Result>(b);
 }
-#endif
 #include <iostream>
 #include <fstream>
 
@@ -4995,9 +4996,9 @@ void MainWindow::progressCount()
 	//logOut << GetNowTime() << ", " << "progressCount Satrt.\n";
 
 	//计时开始
-	T_timeBegin = clock();
-	time_t now = time(nullptr);
-	URC_LOG_INFO("progressCount started at: {}", ctime(&now));
+	QElapsedTimer timer;
+	timer.start();
+	URC_LOG_INFO("progressCount started");
 
 	process_pos = 0;
 	process_str = "calculating";
@@ -5043,7 +5044,7 @@ void MainWindow::progressCount()
 
 			URC_LOG_WARN("progressCount stopped by user. progress={}, elapsed_so_far={}s",
 			             process_pos,
-			             (double)(clock() - T_timeBegin) / CLOCKS_PER_SEC);
+			             timer.elapsed() / 1000.0);
 
 			//更新进度条
 			emit(this->pDisplaydow->ui->Button_start_scan->clicked());
@@ -5061,7 +5062,7 @@ void MainWindow::progressCount()
 
 			URC_LOG_ERROR("progressCount aborted: param error. progress={}, elapsed_so_far={}s",
 			              process_pos,
-			              (double)(clock() - T_timeBegin) / CLOCKS_PER_SEC);
+			              timer.elapsed() / 1000.0);
 
 			//更新进度条
 			emit(this->pDisplaydow->ui->Button_start_scan->clicked());
@@ -5162,8 +5163,7 @@ void MainWindow::progressCount()
 	}
 
 	//计时结束
-	T_timeEnd = clock();
-	double endtime_sec = (double)(T_timeEnd - T_timeBegin) / double(CLOCKS_PER_SEC);
+	double endtime_sec = timer.elapsed() / 1000.0;
 	QString str = QString::number(endtime_sec, 'f', 3) + "s";
 	time_qstr = str;
 	URC_LOG_INFO("progressCount finished. type={}, file={}, elapsed={}, road_count={}",
@@ -7331,7 +7331,7 @@ void MainWindow::recover() {
 }
 
 //增加
-void MainWindow::run_calculate()
+void MainWindow::run_calculate() try
 {
 	//查看要计算的功能模块
 	std::string which = whichOpen();
@@ -7553,6 +7553,11 @@ void MainWindow::run_calculate()
 	URC_LOG_INFO("run_calculate dispatch done. type={}, index={}", which, index);
 	//logOut << GetNowTime() << ", " << "run_calculate Over.\n";
 	return;
+}
+
+catch (const std::exception& error) {
+	URC_LOG_ERROR("Calculation failed: {}", error.what());
+	set_needOver(true);
 }
 
 void MainWindow::generateIndex()
@@ -7823,7 +7828,7 @@ std::string getShpFileName(std::string filepath) {
 	return shpfilename;
 }
 
-void MainWindow::OnFileOpen()
+void MainWindow::OnFileOpen() try
 {
 	URC_LOG_INFO("OnFileOpen() triggered");
 	const QString previousProcessStr = process_str;
@@ -8051,6 +8056,14 @@ void MainWindow::OnFileOpen()
 		this->locationLabel->setText(process_str);
 	}
 	
+}
+
+catch (const std::exception& error) {
+	URC_LOG_ERROR("File import failed: {}", error.what());
+	loadFilePathOver = false;
+	process_str = "Load failed";
+	locationLabel->setText(process_str);
+	QMessageBox::warning(this, tr("Import failed"), QString::fromLocal8Bit(error.what()));
 }
 
 void MainWindow::OnCSVFileOpen()

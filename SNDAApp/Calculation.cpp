@@ -27,8 +27,16 @@
 #include <thread>
 #include <limits>
 #include <stdexcept>
+#include <type_traits>
 #include "CSVProcess.h"
 #include "Logger.h"
+
+template <typename A, typename B>
+static inline typename std::common_type<A, B>::type min(A a, B b)
+{
+    typedef typename std::common_type<A, B>::type Result;
+    return std::min(static_cast<Result>(a), static_cast<Result>(b));
+}
 
 #ifndef _WIN32
 inline void Sleep(unsigned int milliseconds)
@@ -573,7 +581,7 @@ inline std::set<double> getParaSet(std::string cstrTest)
 		if (str == "n")
 			result.insert(-1);
 		else
-			result.insert(stof(str.substr(str.find_first_of(number))));
+			result.insert(stod(str.substr(str.find_first_of(number))));
 	}
 
 	return result;
@@ -585,7 +593,7 @@ inline double getPara(std::string cstrTest)
 	std::string str = cstrTest;
 	if (str.length() == 0)
 		return INT_MAX;
-	return stof(str.substr(str.find_first_of(number)));
+	return stod(str.substr(str.find_first_of(number)));
 }
 
 template <typename DistanceFunction>
@@ -3591,7 +3599,9 @@ void Calculation::MultiCalculate(ShapeFileAccessor &fileAccessor,long long pos)
 {
 	URC_LOG_DEBUG("MultiCalculate started on core mask {}", pos);
 		//设置用哪个CPU核心处理该线程
+#ifdef _WIN32
 	SetThreadAffinityMask(GetCurrentThread(), pos);
+#endif
 	// std::string threadIdString = "子线程id:" + std::to_string(GetCurrentThreadId()) + "  ";
 	// OutputDebugString(threadIdString.c_str());
 	// std::string output = "位于核心：" + std::to_string(GetCurrentProcessorNumber()) + "\n";
@@ -3618,7 +3628,9 @@ void Calculation::MultiCalculate(ShapeFileAccessor &fileAccessor,long long pos)
 
 void Calculation::MultiVisualize(ShapeFileAccessor &fileAccessor, long long pos)
 {
+#ifdef _WIN32
 	SetThreadAffinityMask(GetCurrentThread(), pos);
+#endif
 	//Step Depth计算
 	if (isStepDepth)
 	{
@@ -5078,798 +5090,151 @@ void Calculation::Geo_calculateMR(ShapeFileAccessor &fileAccessor)
 }
 
 
-inline std::map<std::string, std::map<int, double>> getMap(ShapeFileAccessor& fileAccessor, int startRoad, const std::set<int>& validRoads, const std::map<int, partInNode>& partInLength, const std::map<std::string, std::map<int, double>>& weight, const std::vector<bool>& type) {
-	std::map<std::string, std::map<int, double>> resultMap;
-	struct CompareSecond {
-		bool operator()(const std::pair<int, int>& p1, const std::pair<int, int>& p2) {
-			return p1.second > p2.second;
-		}
-	};
-	std::priority_queue<std::pair<int, int>, std::vector<std::pair<int, int>>, CompareSecond> q;
-	std::vector<bool> visited(fileAccessor.roadID.size() * 2, false);
-	q.push(std::make_pair(startRoad, 0));
-	int inverse_startRoad= (startRoad + fileAccessor.roadID.size()) % (fileAccessor.roadID.size() * 2);
-	for (int connectedRoad : fileAccessor.AdjRoadList[startRoad]) {
-		if (connectedRoad == inverse_startRoad)continue;
-		if (validRoads.count(connectedRoad % fileAccessor.roadID.size()) > 0 && !visited[connectedRoad]) {
-			q.push(std::make_pair(connectedRoad, fileAccessor.AdjTurnMP[startRoad][connectedRoad]));
+// Search both directed states independently; partial boundary roads are terminals.
+inline std::map<std::string, std::map<int, double>> getMap(
+    const ShapeFileAccessor& fileAccessor, int startRoad, const std::set<int>& validRoads,
+    const std::map<int, partInNode>& partial, const std::map<std::string, std::map<int, double>>& weights,
+    const std::vector<bool>& type)
+{
+    std::map<std::string, std::map<int, double>> result;
+    const int count = static_cast<int>(fileAccessor.roadID.size());
+    const int infinity = std::numeric_limits<int>::max();
+    std::vector<int> distance(count * 2, infinity);
+    typedef std::pair<int, int> Entry;
+    std::priority_queue<Entry, std::vector<Entry>, std::greater<Entry>> queue;
+    distance[startRoad] = distance[startRoad + count] = 0;
+    queue.push(Entry(0, startRoad));
+    queue.push(Entry(0, startRoad + count));
 
-		}
-	}
-	for (int connectedRoad : fileAccessor.AdjRoadList[inverse_startRoad]) {
-		if (connectedRoad == startRoad)continue;
-		if (validRoads.count(connectedRoad % fileAccessor.roadID.size()) > 0 && !visited[connectedRoad]) {
-			q.push(std::make_pair(connectedRoad, fileAccessor.AdjTurnMP[inverse_startRoad][connectedRoad]));
-		}
-	}
+    while (!queue.empty()) {
+        const Entry entry = queue.top();
+        queue.pop();
+        const int directed = entry.second;
+        if (entry.first != distance[directed]) continue;
+        if (partial.count(directed % count) && directed % count != startRoad) continue;
+        const auto adjacency = fileAccessor.AdjRoadList.find(directed);
+        if (adjacency == fileAccessor.AdjRoadList.end()) continue;
+        const auto turns = fileAccessor.AdjTurnMP.find(directed);
+        if (turns == fileAccessor.AdjTurnMP.end()) continue;
+        for (int next : adjacency->second) {
+            const int road = next % count;
+            if (!validRoads.count(road)) continue;
+            const auto boundary = partial.find(road);
+            if (boundary != partial.end() && road != startRoad &&
+                (next < count ? boundary->second.leftLength : boundary->second.rightLength) <= 0) continue;
+            const auto turn = turns->second.find(next);
+            if (turn == turns->second.end()) continue;
+            const int cost = entry.first + turn->second;
+            if (cost < distance[next]) {
+                distance[next] = cost;
+                queue.push(Entry(cost, next));
+            }
+        }
+    }
 
-	while (!q.empty()) {
-		std::pair<int, int> nowRoadAndTurnCount = q.top();
-		int nowRoad = nowRoadAndTurnCount.first;
-		int inverse_nowRoad = (nowRoad + fileAccessor.roadID.size()) % (fileAccessor.roadID.size() * 2);
-		int turnCount = nowRoadAndTurnCount.second;
-		q.pop();
-
-		if (!visited[nowRoad]) {
-			if (partInLength.count(nowRoad)==0) {
-				visited[inverse_nowRoad] = true;
-			}
-			visited[nowRoad] = true;
-
-			// dd
-			if (type[0]) {
-				resultMap["dd"][turnCount]++;
-			}
-
-			// ddl
-			if (type[1]) {
-				// partInLength and Length only store forward road IDs;
-				// normalize nowRoad (which may be a reverse-direction ID) so that
-				// reverse-direction visits to a boundary road also use its partial length.
-				int forwardRoad = nowRoad % fileAccessor.roadID.size();
-				auto partIt = partInLength.find(forwardRoad);
-				if (partIt != partInLength.end()) {
-					resultMap["ddl"][turnCount] += partIt->second.leftLength + partIt->second.rightLength;
-				}
-				else {
-					auto lenIt = fileAccessor.Length.find(forwardRoad);
-					if (lenIt != fileAccessor.Length.end()) {
-						resultMap["ddl"][turnCount] += lenIt->second;
-					}
-				}
-			}
-
-			// wdd
-			if (type[2]) {
-				// weightMap only stores forward road IDs; normalize nowRoad so that
-				// reverse-direction visits to a road also contribute its weight.
-				int forwardRoadForWeight = nowRoad % fileAccessor.roadID.size();
-				for (const auto& weightPair : weight) {
-					const std::string& weightName = weightPair.first;
-					const std::map<int, double>& weightMap = weightPair.second;
-					auto weightIt = weightMap.find(forwardRoadForWeight);
-					if (weightIt != weightMap.end()) {
-						resultMap[weightName][turnCount] += weightIt->second;
-					}
-				}
-			}
-
-			for (int connectedRoad : fileAccessor.AdjRoadList[nowRoad]) {
-				if (connectedRoad == inverse_nowRoad)continue;
-				if (validRoads.count(connectedRoad%fileAccessor.roadID.size()) > 0 && !visited[connectedRoad]) {
-					q.push(std::make_pair(connectedRoad, turnCount + fileAccessor.AdjTurnMP[nowRoad][connectedRoad]));
-					
-				}
-			}
-		}
-	}
-	return resultMap;
+    for (int road : validRoads) {
+        const int cost = std::min(distance[road], distance[road + count]);
+        if (cost == infinity) continue;
+        const auto boundary = partial.find(road);
+        if (boundary == partial.end()) {
+            if (type[0]) result["dd"][cost] += 1;
+            if (type[1]) result["ddl"][cost] += fileAccessor.Length.at(road);
+        } else {
+            // Each covered end contributes only its own length and turn distance.
+            for (int side = 0; side < 2; ++side) {
+                const int sideCost = road == startRoad ? 0 : distance[road + side * count];
+                const double length = side == 0 ? boundary->second.leftLength : boundary->second.rightLength;
+                if (length > 0 && sideCost != infinity) {
+                    if (type[0]) result["dd"][sideCost] += road == startRoad ? 0.5 : 1;
+                    if (type[1]) result["ddl"][sideCost] += length;
+                }
+            }
+        }
+        if (type[2]) {
+            for (const auto& weight : weights) {
+                const auto value = weight.second.find(road);
+                if (value != weight.second.end()) result["weight:" + weight.first][cost] += value->second;
+            }
+        }
+    }
+    return result;
 }
 
-void Calculation::calculateDDLbyDij(ShapeFileAccessor& fileAccessor) {
-	isFinished = false;
+void Calculation::calculateDDLbyDij(ShapeFileAccessor& fileAccessor)
+{
+    isFinished = false;
+    Graph metricGraph;
+    metricGraph.copy_impl(*fileAccessor.ProcessShapeFile());
+    const vertex_descriptor origin = boost::add_vertex(metricGraph);
+    std::vector<double> nodeDistance(boost::num_vertices(metricGraph));
+    const std::set<double> radii = MRLimitSet2.empty() ? std::set<double>{-1} : MRLimitSet2;
+    extern bool NeedStop;
+    for (int startRoad : subRoadVec) {
+        if (NeedStop) return;
+        const double halfLength = fileAccessor.Length.at(startRoad) * 0.5;
+        EdgeProperty edge;
+        edge.m_base = halfLength;
+        edge.m_value = startRoad;
+        boost::add_edge(origin, fileAccessor.roadNode.at(startRoad)[0], edge, metricGraph);
+        boost::add_edge(origin, fileAccessor.roadNode.at(startRoad)[1], edge, metricGraph);
+        boost::dijkstra_shortest_paths(metricGraph, origin, boost::distance_map(nodeDistance.data()));
+        boost::clear_vertex(origin, metricGraph);
 
-	if (subRoadVec.size() == 0) {
-		isFinished = true;
-		return;
-	}
-
-	int numVertices_DR = fileAccessor.roadID.size() * 2;
-
-	std::vector<double> distances1(numVertices_DR, numVertices_DR + 1);
-	std::vector<double> distances2(numVertices_DR, numVertices_DR + 1);
-	DirectionDistanceFunction<int> directiondistfunc(fileAccessor);
-
-	std::map<int, double> dict_min_dist;
-	std::map<int, double> dict_real_min_dist; 
-	std::map<int, double> new_dict_real_min_dist; 
-	std::map<int, double> ddMap; 
-	std::map<int, double> ddlMap; 
-	std::map<int, double> wddMap; 
-	std::set<int> inRoad; 
-
-	std::map<int, int> newMapNodes;
-	std::map<int, std::vector<int>> newRoadNode;
-	std::map<std::string, int> newNodeToRoad;
-	std::map<int, std::vector<double>> partIn; 
-
-	int numVertices_MD = fileAccessor.roadID.size(); 
-
-
-	std::vector<double> distances0(numVertices_MD, INT_MAX);
-
-	MetricDistanceFunction<double> metricdistfunc(fileAccessor);
-
-	std::set<int> inNode; 
-	std::set<int> outRoad; 
-	std::vector<double> allIn;
-	std::vector<double> partIn2;
-	std::map<int, partInNode> partInLength;
-	std::map<int, std::map<int, std::map<int, int>>> mdr_partInReachRoadNodeCoor;
-
-
-	std::set<double> last_allInRoads;		
-
-
-	std::vector<vertex_descriptor> parents(numVertices_MD + 1);
-	std::vector<double> distances(numVertices_MD + 1);
-	std::vector<int> tmp{ 0,0 };
-
-	double MAX_MRLimit = -1;
-	for (auto MRLimit : MRLimitSet2) {
-		if (MRLimit > MAX_MRLimit)MAX_MRLimit = MRLimit;
-		if (MRLimit == -1) {
-			MAX_MRLimit = -1; break;
-		}
-	}
-
-	extern bool NeedStop;
-
-	for (auto startRoad : subRoadVec) {
-		std::vector<double>(numVertices_MD, INT_MAX).swap(distances0);
-		getDistDijkstra(metricdistfunc, startRoad, MAX_MRLimit, distances0);
-		if (MRLimitSet2.empty()) {
-			outRoad.insert(fileAccessor.roadID.begin(), fileAccessor.roadID.end());
-		}
-		else {
-			for (auto MRLimit : MRLimitSet2) {
-				// P0-2/P0-3: reset per-MRLimit state for every iteration (incl. MRLimit == -1)
-				std::set<int>().swap(outRoad);
-				std::set<int>().swap(inRoad);
-				std::map<int, partInNode>().swap(partInLength);
-				std::queue<int> q;
-				std::vector<bool> visited(fileAccessor.roadID.size(), false);
-				if (MRLimit == -1) {
-					outRoad.insert(fileAccessor.roadID.begin(), fileAccessor.roadID.end());
-				}
-				else {
-					//the startRoad can be totally cover. 
-					if (2 * MRLimit < fileAccessor.Length[startRoad]) {
-						outRoad.insert(startRoad); 
-					}
-					else {
-						q.push(startRoad);
-						while (!q.empty()) {
-							int nowRoad = q.front();
-							q.pop();
-							if (visited[nowRoad])
-								continue;
-							double len = fileAccessor.Length[nowRoad];
-							outRoad.insert(nowRoad);
-							visited[nowRoad] = true;
-							for (auto next_iter = fileAccessor.Road_to_roads[nowRoad].begin(); next_iter != fileAccessor.Road_to_roads[nowRoad].end(); next_iter++) {
-								double length = fileAccessor.Length[*next_iter];
-								int connected_cursor = *next_iter;
-								if (connected_cursor == startRoad)
-									continue;
-								if (distances0[connected_cursor] <= MRLimit) // connected_cursor can be totally cover	
-									q.push(connected_cursor);
-								else if (distances0[nowRoad]< MRLimit && distances0[connected_cursor] > MRLimit) {	//can't
-									outRoad.insert(connected_cursor);
-									int pre_node1 = fileAccessor.roadNode[nowRoad][0];
-									int pre_node2 = fileAccessor.roadNode[nowRoad][1];
-									int node1 = fileAccessor.roadNode[connected_cursor][0];
-									int node2 = fileAccessor.roadNode[connected_cursor][1];
-									int same_node = node1;
-									if (pre_node1 == node2 || pre_node2 == node2)
-										same_node = node2;
-									if (same_node == node1) {
-										if (MRLimit - distances0[nowRoad] > partInLength[connected_cursor].leftLength) {
-											partInLength[connected_cursor].leftPreRoad = nowRoad;
-											partInLength[connected_cursor].leftLength = MRLimit - distances0[nowRoad];
-										}
-									}
-									else {
-										if (MRLimit - distances0[nowRoad] > partInLength[connected_cursor].rightLength) {
-											partInLength[connected_cursor].rightPreRoad = nowRoad;
-											partInLength[connected_cursor].rightLength = MRLimit - distances0[nowRoad];
-										}
-									}
-								}
-							}
-						}
-
-					}
-				}
-
-
-				if (isWgt) {
-					std::map<std::string,std::map<int, double>> map = getMap(fileAccessor, startRoad, outRoad, partInLength, weight, std::vector<bool>(3, true));
-					ddMap = map["dd"];
-					ddlMap = map["ddl"];
-
-					for (auto it = weight.begin(); it != weight.end(); it++) {
-						double weight_turn_sum = 0, weight_sum = 0;
-						wddMap = map[it->first];
-						for (const auto& pair : wddMap) {
-							weight_turn_sum += pair.first * pair.second;
-							weight_sum += pair.second;
-						}
-						WDD_all[MRLimit][it->first][startRoad] = weight_turn_sum / weight_sum;
-					}
-
-				}
-				else {
-					std::vector<bool> type = { true,true,false };
-					std::map<std::string, std::map<int, double>> map = getMap(fileAccessor, startRoad, outRoad, partInLength, weight, type);
-					ddMap = map["dd"];
-					ddlMap = map["ddl"];
-				}
-				double road_count = 0, turn_count = 0;
-				for (const auto& pair : ddMap) {
-					turn_count += pair.first * pair.second;
-					road_count += pair.second;
-				}
-				DD_all[MRLimit][startRoad] = turn_count / road_count;
-
-				double length_turn_sum = 0, length_sum = 0;
-				for (const auto& pair : ddlMap) {
-					length_turn_sum += pair.first * pair.second;
-					length_sum += pair.second;
-				}
-				DDL_all[MRLimit][startRoad] = length_turn_sum / length_sum;
-				
-				//std::vector<double>(numVertices_DR, INT_MAX).swap(distances1);
-				//std::vector<double>(numVertices_DR, INT_MAX).swap(distances2);
-				//PartDirectionDistanceFunction<int> partdirectiondistfunc(fileAccessor, outRoad);
-				//getDistBFS(partdirectiondistfunc, startRoad, -1, distances1);
-				//getDistBFS(partdirectiondistfunc, startRoad + fileAccessor.roadID.size(), -1, distances2);
-				//std::map<int, double>().swap(dict_min_dist);
-				//for (int i = 0; i < numVertices_DR; i++)
-				//	dict_min_dist.insert(std::make_pair(i, min(distances1[i], distances2[i])));
-				//std::map<int, double>().swap(dict_real_min_dist);
-				//for (int k = 0; k < fileAccessor.roadID.size(); k++) {
-				//	int reverse_k = k + fileAccessor.roadID.size();
-				//	double min_d = min(dict_min_dist[k], dict_min_dist[reverse_k]);
-				//	dict_real_min_dist.insert(std::make_pair(k, min_d));
-				//}
-
-				//double M_dd = DD(fileAccessor, dict_min_dist, dict_real_min_dist, outRoad, partInLength);
-				//double M_ddl = DDL(fileAccessor, dict_min_dist, dict_real_min_dist, outRoad, partInLength);
-				//DD_all[MRLimit][startRoad] = M_dd;
-				//DDL_all[MRLimit][startRoad] = M_ddl;
-
-				//if (isWgt)
-				//{
-				//	double M_ddl = DDL(fileAccessor, dict_min_dist, dict_real_min_dist, outRoad, partInLength);
-				//	for (auto wgt_it = wdd.begin(); wgt_it != wdd.end(); wgt_it++) {
-				//		WDD_all[MRLimit][wgt_it->first][startRoad] = wgt_it->second;
-				//	}
-
-				//	std::map<std::string, double> wdd;
-				//	std::map<std::string, double> wdd_sum1;
-				//	std::map<std::string, double> wdd_sum2;
-				//	std::map<std::string, double> sub_wgt;
-				//	std::set<int> valid_roads;
-
-				//	for (auto it3 = ddMap.begin(); it3 != ddMap.end(); it3++) {
-				//		sub_wgt = CalculateWgtInline(weight, it3->second);
-				//		for (auto wgt_it = weight.begin(); wgt_it != weight.end(); wgt_it++) {
-				//			wdd_sum1[wgt_it->first] += ((it3->first) * (sub_wgt[wgt_it->first]));
-				//		}
-				//		valid_roads.insert(it3->second.begin(), it3->second.end());
-				//	}
-				//	wdd_sum2 = CalculateWgtInline(weight, valid_roads);
-
-				//	for (auto wgt_it = weight.begin(); wgt_it != weight.end(); wgt_it++) {
-				//		if (wdd_sum2[wgt_it->first] == 0)
-				//			wdd[wgt_it->first] = 0;
-				//		else
-				//			wdd[wgt_it->first] = wdd_sum1[wgt_it->first] / wdd_sum2[wgt_it->first];
-				//	}
-
-				//	for (auto wgt_it = wdd.begin(); wgt_it != wdd.end(); wgt_it++) {
-				//		WDD_all[MRLimit][wgt_it->first][startRoad] = wgt_it->second;
-				//	}
-
-				//}
-
-			}
-		}
-		
-
-		finishedCount += 1;
-		addFinishedCount();
-	}
-
-	isFinished = true;
+        for (double radius : radii) {
+            std::set<int> reachable;
+            std::map<int, partInNode> partial;
+            for (int road : fileAccessor.roadID) {
+                const double length = fileAccessor.Length.at(road);
+                if (radius < 0) {
+                    reachable.insert(road);
+                    continue;
+                }
+                if (road == startRoad) {
+                    reachable.insert(road);
+                    if (radius < halfLength) {
+                        partial[road].leftLength = partial[road].rightLength = radius;
+                    }
+                    continue;
+                }
+                const auto& nodes = fileAccessor.roadNode.at(road);
+                const double left = std::max(0.0, std::min(length, radius - nodeDistance[nodes[0]]));
+                const double right = std::max(0.0, std::min(length, radius - nodeDistance[nodes[1]]));
+                if (left + right <= 0) continue;
+                reachable.insert(road);
+                if (left + right < length) {
+                    partial[road].leftLength = left;
+                    partial[road].rightLength = right;
+                }
+            }
+            const auto distributions = getMap(fileAccessor, startRoad, reachable, partial, weight,
+                                               {true, true, isWgt});
+            auto mean = [&](const std::string& key) {
+                const auto values = distributions.find(key);
+                if (values == distributions.end()) return 0.0;
+                double numerator = 0, denominator = 0;
+                for (const auto& value : values->second) {
+                    numerator += value.first * value.second;
+                    denominator += value.second;
+                }
+                return denominator == 0 ? 0.0 : numerator / denominator;
+            };
+            DD_all[radius][startRoad] = mean("dd");
+            DDL_all[radius][startRoad] = mean("ddl");
+            if (isWgt) {
+                for (const auto& attribute : weight) {
+                    WDD_all[radius][attribute.first][startRoad] = mean("weight:" + attribute.first);
+                }
+            }
+        }
+        ++finishedCount;
+        addFinishedCount();
+    }
+    isFinished = true;
 }
 
-
-void Calculation::calculateDDL(ShapeFileAccessor &fileAccessor) {
-	isFinished = false;
-
-	if (subRoadVec.size() == 0) {
-		isFinished = true;
-		return;
-	}
-
-	//创建有向图		
-	Graph_d edgGraph_DR;
-	GenerateDirectedGraph(fileAccessor, edgGraph_DR);
-	Graph *g = fileAccessor.ProcessShapeFile();
-	int old_numEdges = int(boost::num_edges(*g));
-	int numVertices_DR = int(boost::num_vertices(edgGraph_DR));
-
-	std::vector<vertex_descriptor> parents1(numVertices_DR);
-	std::vector<double> distances1(numVertices_DR);
-	std::vector<vertex_descriptor> parents2(numVertices_DR);
-	std::vector<double> distances2(numVertices_DR);
-
-	std::map<int, double> dict_min_dist;
-	std::map<int, double> dict_real_min_dist;
-	std::map<int, double> new_dict_real_min_dist;
-	std::map<int, std::set<int>> ddMap;
-	std::set<int> inRoad;
-	std::map<double, std::set<int>> validRoad;
-	//有效路准备转无向图需要的数据
-	std::map<int, int> newMapNodes;
-	std::map<int, std::vector<int>> newRoadNode;
-	std::map<std::string, int> newNodeToRoad;
-	std::map<int, std::vector<double>> partIn;
-
-	//预备无向图数据
-	Graph edgGraph_MD;
-	edgGraph_MD.copy_impl(*g);
-	int numEdges_MD = int(boost::num_edges(edgGraph_MD));
-	int numVertices_MD = int(boost::num_vertices(edgGraph_MD));
-
-	//准备接数据
-	std::vector<vertex_descriptor> parents0(numVertices_MD + 1);
-	std::vector<double> distances0(numVertices_MD + 1);
-	std::set<int> inNode;
-	std::set<int> outRoad;
-	std::vector<double> allIn;
-	std::vector<double> partIn2;
-	std::map<int, std::map<int, std::map<int, int>>> mdr_partInReachRoadNodeCoor;
-
-	//增加
-	std::set<double> last_allInRoads;		//前一个半径限制下的全覆盖路径ID序列
-
-	//对vector预配置内存空间
-	//allIn.reserve(subRoadVec.size() * sizeof(double) + 100);
-	//partIn2.reserve(subRoadVec.size() * sizeof(double) + 100);
-
-	//准备接道路数据
-	std::vector<vertex_descriptor> parents(numVertices_MD + 1);
-	std::vector<double> distances(numVertices_MD + 1);
-	std::vector<int> tmp{ 0,0 };
-
-	//增加
-	EdgeProperty ep1, ep2, ep3;
-	Graph subGraph;
-
-	extern bool NeedStop;
-	for (auto it = subRoadVec.begin(); it != subRoadVec.end(); it++)	//对每条起始边
-	{
-		if (NeedStop) {
-			return;
-		}
-
-		int startRoad = *it;
-		int startRoad2 = startRoad + old_numEdges;
-
-		//传入n组队列，输出n*m组终极有效队列
-		if (int(MRLimitSet2.size()) == 0)		//无里程限制：direction reach
-		{
-			//两次有向图搜索
-			boost::dijkstra_shortest_paths(edgGraph_DR, startRoad, boost::predecessor_map(&parents1[0]).distance_map(&distances1[0]));
-			boost::dijkstra_shortest_paths(edgGraph_DR, startRoad2, boost::predecessor_map(&parents2[0]).distance_map(&distances2[0]));
-
-			std::map<int, double>().swap(dict_min_dist);
-			for (int i = 0; i < numVertices_DR; i++)
-				dict_min_dist.insert(std::make_pair(i, min(distances1[i], distances2[i])));
-
-			//收集DR有效的道路队列
-			std::map<double, std::set<int>>().swap(validRoad);
-			std::map<int, double>().swap(dict_real_min_dist);
-			for (int k = 0; k < old_numEdges; k++) {
-				//找出有向边i对应的反向边id
-				int reverse_k = k + old_numEdges;
-				double min_d = min(dict_min_dist[k], dict_min_dist[reverse_k]);
-				dict_real_min_dist.insert(std::make_pair(k, min_d));
-			}
-
-			//计算dd、ddl
-			std::map<int, std::set<int>>().swap(ddMap);
-			double M_ddlSum = 0, M_lenSum = 0, M_ddl = 0;
-			for (auto it2 = fileAccessor.roadID.begin(); it2 != fileAccessor.roadID.end(); it2++){
-				ddMap[int(dict_real_min_dist[*it2])].insert(*it2);
-				M_ddlSum += dict_real_min_dist[*it2] * fileAccessor.Length[*it2];
-				M_lenSum += fileAccessor.Length[*it2];
-			}
-			double M_dd = 0, M_ddSum1 = 0, M_ddSum2 = 0;
-			for (auto it3 = ddMap.begin(); it3 != ddMap.end(); it3++){
-				M_ddSum1 += ((it3->first)*(it3->second.size()));
-				M_ddSum2 += it3->second.size();
-			}
-			M_dd = M_ddSum1 / M_ddSum2;
-			M_ddl = M_ddlSum / M_lenSum;
-
-			//数据存储
-			DD_all[-1][startRoad] = M_dd;
-			DDL_all[-1][startRoad] = M_ddl;
-
-			if (isWgt) {
-				std::map<std::string, double> wdd;
-				std::map<std::string, double> wdd_sum1;
-				std::map<std::string, double> wdd_sum2;
-				std::map<std::string, double> sub_wgt;
-
-				for (auto it3 = ddMap.begin(); it3 != ddMap.end(); it3++) {
-					sub_wgt = CalculateWgtInline(weight, it3->second);
-					for (auto wgt_it = weight.begin(); wgt_it != weight.end(); wgt_it++) {
-						wdd_sum1[wgt_it->first] += ((it3->first)*(sub_wgt[wgt_it->first]));
-					}
-				}
-				wdd_sum2 = CalculateWgtInline(weight, fileAccessor.roadID);
-
-				for (auto wgt_it = weight.begin(); wgt_it != weight.end(); wgt_it++) {
-					if (wdd_sum2[wgt_it->first] == 0)
-						wdd[wgt_it->first] = 0;
-					else
-						wdd[wgt_it->first] = wdd_sum1[wgt_it->first] / wdd_sum2[wgt_it->first];
-				}
-
-				//数据存储
-				for (auto wgt_it = wdd.begin(); wgt_it != wdd.end(); wgt_it++) {
-					WDD_all[-1][wgt_it->first][startRoad] = wgt_it->second;
-				}
-
-			}
-
-		}
-		else	 //转向限制+里程限制：combined reach
-		{
-			double dis = fileAccessor.Length[startRoad] / 2;
-			int startNode = numVertices_MD;
-			int MD_node1 = fileAccessor.roadNode[startRoad][0];
-			int MD_node2 = fileAccessor.roadNode[startRoad][1];
-
-			//删除边-起始边
-			boost::remove_edge(MD_node1, MD_node2, edgGraph_MD);
-
-			//添加边-中点到起始边两端
-			ep1.m_base = dis;
-			ep1.m_value = startRoad;
-			boost::add_edge(startNode, MD_node1, ep1, edgGraph_MD);
-
-			ep2.m_base = dis;
-			ep2.m_value = numEdges_MD;
-			boost::add_edge(startNode, MD_node2, ep2, edgGraph_MD);
-
-			boost::dijkstra_shortest_paths(edgGraph_MD, startNode, boost::predecessor_map(&parents0[0]).distance_map(&distances0[0]));
-
-			//对所有MRLimit参数组一轮算完
-			for (auto iter = MRLimitSet2.begin(); iter != MRLimitSet2.end(); iter++)
-			{
-				double MRLimit = *iter;
-
-				std::set<int>().swap(inNode);
-				std::set<int>().swap(inRoad);
-				std::set<int>().swap(outRoad);
-				std::set<double>().swap(last_allInRoads);
-				std::map<int, std::vector<double>>().swap(partIn);
-				partInReachRoadNodeLen.clear();
-
-				if (MRLimit == -1) {
-					outRoad.insert(fileAccessor.roadID.begin(), fileAccessor.roadID.end());
-				}
-				else {
-					//计算inNode：编号0-(顶点数目-1)
-					for (int endNode = 0; endNode < numVertices_MD; endNode++)
-					{
-						double tmpdis = distances0[endNode];
-						double td = double(std::round(pow(10, 8)*tmpdis)) / double(pow(10, 8));
-						if (MRLimit > td)
-							inNode.insert(endNode);
-					}
-
-					//判断是否能够冲出起始边
-					if (2 * MRLimit >= fileAccessor.Length[startRoad])
-					{
-						//将起始边加入allInLength
-						inRoad.insert(startRoad);
-
-						//全覆盖
-						for (auto it1 = fileAccessor.roadID.begin(); it1 != fileAccessor.roadID.end(); it1++)
-						{
-							int endRoad = *it1;
-							if (endRoad == startRoad)	//跳过处理起始边
-								continue;
-
-							double roadLen = fileAccessor.Length[endRoad];
-							int node1 = fileAccessor.roadNode[endRoad][0];		//endrode的端点1
-							int node2 = fileAccessor.roadNode[endRoad][1];		//endrode的端点2
-
-							// 如果是完全覆盖，则必须同时到达其两个端点
-							if (inNode.count(node1) != 0 && inNode.count(node2) != 0)
-							{
-								double dist_res1 = MRLimit - distances0[node1];  // 端点1方向越过距离
-								double dist_res2 = MRLimit - distances0[node2];  // 端点2方向越过距离
-								double dist_res = dist_res1 + dist_res2;
-								if (dist_res >= roadLen)   // 只有确定是完全越过，才会加入allIn
-								{
-									inRoad.insert(endRoad);
-								}
-							}
-						}
-
-						//部分覆盖
-						for (auto it1 = fileAccessor.roadID.begin(); it1 != fileAccessor.roadID.end(); it1++)
-						{
-							int endRoad = *it1;
-							// 跳过全部覆盖的边
-							if (inRoad.count(endRoad) != 0)
-								continue;
-
-							int node1 = fileAccessor.roadNode[endRoad][0];		//endrode的端点1
-							int node2 = fileAccessor.roadNode[endRoad][1];		//endrode的端点2
-
-							// 如果是部分覆盖，只要有一个端点有越过
-							if (inNode.count(node1) != 0 || inNode.count(node2) != 0)
-							{
-								// 检查是否已到达边缘的起点
-								if (inNode.count(node1) != 0)
-								{
-									double dis_overflow = MRLimit - distances0[node1];
-									partIn[endRoad].push_back(dis_overflow);
-									partInReachRoadNodeLen[startRoad][endRoad][node1] = dis_overflow;
-									mdr_partInReachRoadNodeCoor[startRoad][endRoad][node1] = partInRoads_all[startRoad][endRoad].size();
-
-									//计算坐标
-									double x1 = fileAccessor.Route[endRoad][0];
-									double y1 = fileAccessor.Route[endRoad][1];
-									double x2 = fileAccessor.Route[endRoad][2];
-									double y2 = fileAccessor.Route[endRoad][3];
-									double rate = dis_overflow / fileAccessor.Length[endRoad];
-
-									double x = x1 + (x2 - x1)*rate;
-									double y = y1 + (y2 - y1)*rate;
-
-									partInRoads_all[startRoad][endRoad].push_back(x1);
-									partInRoads_all[startRoad][endRoad].push_back(y1);
-									partInRoads_all[startRoad][endRoad].push_back(x);
-									partInRoads_all[startRoad][endRoad].push_back(y);
-								}
-								if (inNode.count(node2) != 0)
-								{
-									double dis_overflow = MRLimit - distances0[node2];
-									partIn[endRoad].push_back(dis_overflow);
-									partInReachRoadNodeLen[startRoad][endRoad][node2] = dis_overflow;
-									mdr_partInReachRoadNodeCoor[startRoad][endRoad][node2] = partInRoads_all[startRoad][endRoad].size();
-
-									//计算坐标
-									double x2 = fileAccessor.Route[endRoad][0];
-									double y2 = fileAccessor.Route[endRoad][1];
-									double x1 = fileAccessor.Route[endRoad][2];
-									double y1 = fileAccessor.Route[endRoad][3];
-									double rate = dis_overflow / fileAccessor.Length[endRoad];
-
-									double x = x1 + (x2 - x1)*rate;
-									double y = y1 + (y2 - y1)*rate;
-
-									partInRoads_all[startRoad][endRoad].push_back(x1);
-									partInRoads_all[startRoad][endRoad].push_back(y1);
-									partInRoads_all[startRoad][endRoad].push_back(x);
-									partInRoads_all[startRoad][endRoad].push_back(y);
-								}
-
-								outRoad.insert(endRoad);
-							}
-						}
-
-						//outRoad=inRoad+partin的路
-						outRoad.insert(inRoad.begin(), inRoad.end());
-					}
-					else
-					{
-						outRoad.insert(startRoad);
-						partIn[startRoad].push_back(2 * MRLimit);
-
-						//计算坐标
-						double x1 = fileAccessor.Route[startRoad][0];
-						double y1 = fileAccessor.Route[startRoad][1];
-						double x2 = fileAccessor.Route[startRoad][2];
-						double y2 = fileAccessor.Route[startRoad][3];
-						double x_mid = (x1 + x2) / 2;
-						double y_mid = (y1 + y2) / 2;
-
-						int node1 = fileAccessor.roadNode[startRoad][0];		//endrode的端点1
-						int node2 = fileAccessor.roadNode[startRoad][1];		//endrode的端点2
-
-						double rate = 2 * MRLimit / fileAccessor.Length[startRoad];
-
-						double xn1 = fileAccessor.Route[startRoad][0];
-						double yn1 = fileAccessor.Route[startRoad][1];
-						double xn2 = fileAccessor.Route[startRoad][2];
-						double yn2 = fileAccessor.Route[startRoad][3];
-						double x_1 = x_mid + (xn1 - x_mid)*rate;
-						double y_1 = y_mid + (yn1 - y_mid)*rate;
-						double x_2 = x_mid + (xn2 - x_mid)*rate;
-						double y_2 = y_mid + (yn2 - y_mid)*rate;
-
-						partInRoads_all[startRoad][startRoad].push_back(x_1);
-						partInRoads_all[startRoad][startRoad].push_back(y_1);
-						partInRoads_all[startRoad][startRoad].push_back(x_2);
-						partInRoads_all[startRoad][startRoad].push_back(y_2);
-					}
-				}
-
-				std::map<int, double>().swap(new_dict_real_min_dist);
-				double M_dd = 0, M_ddl = 0;
-				if (MRLimit == -1) {		//无需重构有向图				
-					boost::dijkstra_shortest_paths(edgGraph_DR, startRoad, boost::predecessor_map(&parents1[0]).distance_map(&distances1[0]));
-					boost::dijkstra_shortest_paths(edgGraph_DR, startRoad2, boost::predecessor_map(&parents2[0]).distance_map(&distances2[0]));
-
-					std::map<int, double>().swap(dict_min_dist);
-					for (int i = 0; i < numVertices_DR; i++)
-						dict_min_dist.insert(std::make_pair(i, min(distances1[i], distances2[i])));
-
-					//收集DR有效的道路队列
-					std::map<double, std::set<int>>().swap(validRoad);
-					std::map<int, double>().swap(dict_real_min_dist);
-					for (int k = 0; k < old_numEdges; k++) {
-						//找出有向边i对应的反向边id
-						int reverse_k = k + old_numEdges;
-						double min_d = min(dict_min_dist[k], dict_min_dist[reverse_k]);
-						dict_real_min_dist.insert(std::make_pair(k, min_d));
-
-					}
-					new_dict_real_min_dist.insert(dict_real_min_dist.begin(), dict_real_min_dist.end());
-
-					ddMap.clear();
-					for (auto it2 = fileAccessor.roadID.begin(); it2 != fileAccessor.roadID.end(); it2++) {
-						ddMap[int(dict_real_min_dist[*it2])].insert(*it2);
-					}
-
-					//计算dd、ddl
-					M_dd = CalculateRoadsDD(fileAccessor, new_dict_real_min_dist, outRoad);
-					M_ddl = CalculateRoadsDDL(fileAccessor, new_dict_real_min_dist, outRoad, partIn, startRoad, old_numEdges);
-					DD_all[MRLimit][startRoad] = M_dd;
-					DDL_all[MRLimit][startRoad] = M_ddl;
-
-				}
-				else {
-					if (outRoad.size() == fileAccessor.roadID.size()) {
-						//两次有向图搜索
-						boost::dijkstra_shortest_paths(edgGraph_DR, startRoad, boost::predecessor_map(&parents1[0]).distance_map(&distances1[0]));
-						boost::dijkstra_shortest_paths(edgGraph_DR, startRoad2, boost::predecessor_map(&parents2[0]).distance_map(&distances2[0]));
-
-						std::map<int, double>().swap(dict_min_dist);
-						for (int i = 0; i < numVertices_DR; i++)
-							dict_min_dist.insert(std::make_pair(i, min(distances1[i], distances2[i])));
-
-						//收集DR有效的道路队列
-						std::map<double, std::set<int>>().swap(validRoad);
-						std::map<int, double>().swap(dict_real_min_dist);
-						for (int k = 0; k < old_numEdges; k++) {
-							//找出有向边i对应的反向边id
-							int reverse_k = k + old_numEdges;
-							double min_d = min(dict_min_dist[k], dict_min_dist[reverse_k]);
-							dict_real_min_dist.insert(std::make_pair(k, min_d));
-
-						}
-						new_dict_real_min_dist.insert(dict_real_min_dist.begin(), dict_real_min_dist.end());
-
-						ddMap.clear();
-						for (auto it2 = fileAccessor.roadID.begin(); it2 != fileAccessor.roadID.end(); it2++) {
-							ddMap[int(new_dict_real_min_dist[*it2])].insert(*it2);
-						}
-
-						//计算dd、ddl
-						M_dd = CalculateRoadsDD(fileAccessor, new_dict_real_min_dist, outRoad);
-						M_ddl = CalculateRoadsDDL(fileAccessor, new_dict_real_min_dist, outRoad, partIn, startRoad, old_numEdges);
-						DD_all[MRLimit][startRoad] = M_dd;
-						DDL_all[MRLimit][startRoad] = M_ddl;
-
-					}
-					else {	//需要重构有向图	
-						std::map<int, std::map<int, int>> partInNodeIDs;
-						std::map<std::tuple<int, int, int>, int> nodeToEdge;
-						std::map<int, std::tuple<int, int, int>> edgeToNode;
-
-						if (outRoad.size() == 1) {
-							new_dict_real_min_dist.clear();
-							new_dict_real_min_dist[startRoad] = 0;
-						}
-						else {
-							Generate_new_dict_real_min_dist_partIn(fileAccessor, new_dict_real_min_dist, dict_min_dist, outRoad, startRoad, inRoad, partInReachRoadNodeLen[startRoad],
-								old_numEdges, 2 * old_numEdges, parents1, distances1, parents2, distances2, partInNodeIDs, nodeToEdge, edgeToNode);
-						}
-
-						//计算dd、ddl
-						M_dd = CalculateDD_PartIn(fileAccessor, new_dict_real_min_dist, outRoad, partInNodeIDs);
-						M_ddl = CalculateDDL_PartIn(fileAccessor, new_dict_real_min_dist, outRoad, partIn, startRoad, old_numEdges, partInNodeIDs, partInReachRoadNodeLen[startRoad]);
-						DD_all[MRLimit][startRoad] = M_dd;
-						DDL_all[MRLimit][startRoad] = M_ddl;
-
-						ddMap.clear();
-						for (auto it2 = outRoad.begin(); it2 != outRoad.end(); it2++) {
-							int road_id = *it2;
-							if (partInNodeIDs.count(road_id)) {
-								int min_cost = INT_MAX;
-								for (auto node_it = partInNodeIDs[road_id].begin(); node_it != partInNodeIDs[road_id].end(); node_it++) {
-									int node = node_it->first;
-									int edge_id = node_it->second;
-									min_cost = min(min_cost, new_dict_real_min_dist[edge_id]);
-								}
-								ddMap[min_cost].insert(road_id);
-							}
-							else {
-								ddMap[int(new_dict_real_min_dist[road_id])].insert(road_id);
-							}
-						}
-					}
-				}
-
-				//计算wdd
-				if (isWgt)
-				{
-					std::map<std::string, double> wdd;
-					std::map<std::string, double> wdd_sum1;
-					std::map<std::string, double> wdd_sum2;
-					std::map<std::string, double> sub_wgt;
-					std::set<int> valid_roads;
-
-					for (auto it3 = ddMap.begin(); it3 != ddMap.end(); it3++) {
-						sub_wgt = CalculateWgtInline(weight, it3->second);
-						for (auto wgt_it = weight.begin(); wgt_it != weight.end(); wgt_it++) {
-							wdd_sum1[wgt_it->first] += ((it3->first)*(sub_wgt[wgt_it->first]));
-						}
-						valid_roads.insert(it3->second.begin(), it3->second.end());
-					}
-					wdd_sum2 = CalculateWgtInline(weight, valid_roads);
-
-					for (auto wgt_it = weight.begin(); wgt_it != weight.end(); wgt_it++) {
-						if (wdd_sum2[wgt_it->first] == 0)
-							wdd[wgt_it->first] = 0;
-						else
-							wdd[wgt_it->first] = wdd_sum1[wgt_it->first] / wdd_sum2[wgt_it->first];
-					}
-
-					//数据存储
-					for (auto wgt_it = wdd.begin(); wgt_it != wdd.end(); wgt_it++) {
-						WDD_all[MRLimit][wgt_it->first][startRoad] = wgt_it->second;
-					}
-					
-				}
-
-				//把图撤销修改：删两条，加一条
-				boost::remove_edge(startNode, MD_node1, edgGraph_MD);
-				boost::remove_edge(startNode, MD_node2, edgGraph_MD);
-
-				ep3.m_base = fileAccessor.Length[startRoad];
-				ep3.m_value = startRoad;
-				boost::add_edge(MD_node1, MD_node2, ep3, edgGraph_MD);
-			}
-		}
-
-		finishedCount += 1;
-		addFinishedCount();
-	}
-
-	isFinished = true;
+void Calculation::calculateDDL(ShapeFileAccessor& fileAccessor)
+{
+    calculateDDLbyDij(fileAccessor);
 }
 
 //void Calculation::calculateMDR(ShapeFileAccessor &fileAccessor) {

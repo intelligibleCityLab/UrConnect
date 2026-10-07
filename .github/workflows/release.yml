@@ -19,9 +19,9 @@ jobs:
         include:
           - name: windows-x64
             os: windows-latest
-            artifact: UrConnect-cli-windows-x64
+            artifact: UrConnect-windows-x64
             package-suffix: windows-x64
-            release-status: Standalone Windows CLI
+            release-status: Windows desktop and standalone CLI
           - name: macos-arm64
             os: macos-14
             artifact: UrConnect-macos-arm64
@@ -35,6 +35,14 @@ jobs:
 
     steps:
       - uses: actions/checkout@v5
+
+      - name: Install Windows Qt
+        if: runner.os == 'Windows'
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '5.15.2'
+          arch: win64_msvc2019_64
+          cache: true
 
       - name: Validate release version
         if: startsWith(github.ref, 'refs/tags/')
@@ -79,8 +87,8 @@ jobs:
         shell: bash
         run: |
           if [ "$RUNNER_OS" = "Windows" ]; then
-            QT5_ROOT=""
-            CMAKE_EXTRA_ARGS=(-DURCONNECT_BUILD_GUI=OFF)
+            QT5_ROOT="$QT_ROOT_DIR"
+            CMAKE_EXTRA_ARGS=()
           elif [ "$RUNNER_OS" = "macOS" ]; then
             QT5_ROOT="$(brew --prefix qt@5)"
             BOOST_ROOT="$(brew --prefix boost)"
@@ -101,18 +109,12 @@ jobs:
         timeout-minutes: 90
         shell: bash
         run: |
-          if [ "$RUNNER_OS" = "Windows" ]; then
-            cmake --build build --config Release --parallel --target urconnect-cli urconnect-test-network
-          elif [ "$RUNNER_OS" = "Linux" ]; then
-            cmake --build build --config Release --parallel 2
-          else
-            cmake --build build --config Release --parallel
-          fi
+          cmake --build build --config Release --parallel 2
 
       - name: Test CLI
         run: ctest --test-dir build -C Release --output-on-failure
 
-      - name: Package Windows CLI
+      - name: Package Windows desktop and CLI
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
@@ -121,6 +123,27 @@ jobs:
           Copy-Item $cli "urconnect-cli-windows-x64.exe"
           & .\urconnect-cli-windows-x64.exe --version
           if ($LASTEXITCODE -ne 0) { throw "Windows CLI version check failed" }
+          New-Item -ItemType Directory -Force package | Out-Null
+          Copy-Item build/bin/Release/UrConnect.exe package/
+          Copy-Item build/bin/Release/shp.dll package/
+          Copy-Item -Recurse build/bin/Release/ico package/
+          Copy-Item $cli package/
+          & windeployqt --release --compiler-runtime --no-translations package/UrConnect.exe
+          if ($LASTEXITCODE -ne 0) { throw "Qt Windows deployment failed" }
+
+      - name: Check Windows desktop startup
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $env:QT_QPA_PLATFORM = "offscreen"
+          $process = Start-Process -FilePath "$PWD/package/UrConnect.exe" -PassThru
+          try {
+            Start-Sleep -Seconds 5
+            $process.Refresh()
+            if ($process.HasExited) { throw "Windows desktop exited during startup (status $($process.ExitCode))" }
+          } finally {
+            if (-not $process.HasExited) { Stop-Process -Id $process.Id -Force }
+          }
 
       - name: Check Windows CLI runtime dependencies
         if: runner.os == 'Windows'
@@ -170,6 +193,13 @@ jobs:
           fi
           cp "$cli_path" package/
           package/urconnect-cli --version
+          QT_QPA_PLATFORM=offscreen perl -e '
+            $pid = fork(); die "fork failed" unless defined $pid;
+            if (!$pid) { exec "package/UrConnect.app/Contents/MacOS/UrConnect"; exit 127; }
+            sleep 5;
+            if (waitpid($pid, 1) == $pid) { die "macOS desktop exited during startup: $?"; }
+            kill "TERM", $pid; waitpid($pid, 0);
+          '
 
       - name: Package Linux executable
         if: runner.os == 'Linux'
@@ -214,17 +244,19 @@ jobs:
           fi
 
       - name: Add license and notices
-        if: runner.os != 'Windows'
         shell: bash
         run: |
           cp LICENSE package/
           cp THIRD_PARTY_NOTICES.md package/
+          cp -R licenses package/
+          cp SNDAApp/lib/COPYING package/Shapelib-COPYING.txt
+          cp genlib/lgpl.txt package/genlib-LGPL.txt
           cat > package/README.txt <<EOF
           UrConnect ${GITHUB_REF_NAME:-manual}
           Platform: ${{ matrix.name }}
           Status: ${{ matrix.release-status }}
 
-          The legacy standalone Windows desktop application remains in release v0.1.0. This release workflow provides a new Windows CLI; macOS and Linux packages remain experimental.
+          This package contains the rebuilt desktop application and standalone CLI. macOS and Linux packages remain experimental. Extract the whole package before running the desktop application.
           EOF
           if [ "$RUNNER_OS" = "Linux" ]; then
             printf '\nLinux binaries are built and tested on Ubuntu 24.04 x64. The desktop app requires system Qt 5, OpenGL and GLU libraries; the CLI requires only the standard C/C++ runtime, not Qt or Shapelib DLLs.\n' >> package/README.txt
@@ -234,6 +266,11 @@ jobs:
         if: runner.os != 'Windows'
         run: tar -czf "UrConnect-${GITHUB_REF_NAME:-manual}-${{ matrix.package-suffix }}.tar.gz" -C package .
 
+      - name: Archive Windows package
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: Compress-Archive -Path package/* -DestinationPath "UrConnect-$env:GITHUB_REF_NAME-windows-x64.zip"
+
       - name: Upload package artifact
         uses: actions/upload-artifact@v7
         with:
@@ -241,6 +278,7 @@ jobs:
           path: |
             urconnect-cli-windows-x64.exe
             UrConnect-*.tar.gz
+            UrConnect-*.zip
           if-no-files-found: error
 
   publish:
@@ -262,7 +300,12 @@ jobs:
           cat > release-notes.md <<EOF
           UrConnect ${GITHUB_REF_NAME}
 
-          The legacy standalone Windows desktop application (UrConnect.exe) remains available in release v0.1.0. It is not included or relabelled in this release.
+          Fixes directional-distance length weighting (DDL), including reverse-direction and metric-radius boundary handling. Desktop single-thread, multi-thread and CLI runs now share the same DDL implementation.
+
+          Includes timestamped logs and millisecond-resolution elapsed wall time, safer file-import error handling, and corrected cross-platform build configuration.
+
+          Windows desktop application:
+          - Rebuilt UrConnect.exe with bundled Qt runtime in the Windows x64 ZIP. Extract the complete ZIP before running.
 
           Command-line interface:
           - Windows x64: urconnect-cli-windows-x64.exe
@@ -271,7 +314,7 @@ jobs:
           - macOS arm64
           - Linux x64
 
-          The macOS application, Linux application, and Windows CLI use the updated shared C++ analysis code. macOS and Linux packages remain marked experimental while cross-platform validation continues.
+          Desktop and CLI packages for all three platforms use the updated shared C++ analysis code and pass automated regression tests. macOS and Linux packages remain marked experimental while broader platform validation continues.
 
           Linux binaries are built and tested on Ubuntu 24.04 x64. The desktop application requires system Qt 5, OpenGL and GLU libraries; the CLI does not require Qt or a separately installed Shapelib library.
           EOF
@@ -282,6 +325,7 @@ jobs:
           body_path: release-notes.md
           files: |
             artifacts/**/UrConnect-*.tar.gz
+            artifacts/**/UrConnect-*.zip
             artifacts/**/urconnect-cli-windows-x64.exe
             artifacts/SHA256SUMS.txt
           overwrite_files: false

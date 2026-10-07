@@ -20,6 +20,7 @@
 
 #include <QPixmap>
 #include <QDir>
+#include <QStandardPaths>
 #include <QDateTime>
 #include <QtGlobal>
 #include <QtWidgets/QApplication>
@@ -81,7 +82,10 @@ int main(int argc, char *argv[])
 {
     // 初始化日志系统（在 Qt 资源初始化之前）
     UrConnect::LoggerConfig logConfig;
-    logConfig.logDir = "logs";
+    QCoreApplication::setOrganizationName("IntelligibleCityLab");
+    QCoreApplication::setApplicationName("UrConnect");
+    logConfig.logDir = (QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation)
+                       + "/logs").toStdString();
     logConfig.logFileName = "urconnect.log";
     logConfig.dailyLogBaseName = "urconnect_daily";
     logConfig.dailyLogExt = "log";

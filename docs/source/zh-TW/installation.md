@@ -4,23 +4,24 @@ UrConnect 透過 GitHub Releases 和源碼分發。桌面程式使用 C++、Qt 5
 
 ## 平台狀態
 
-目前原始碼版本為 0.2.0。現有獨立 Windows 桌面程式仍屬於 v0.1.0，不會重新標為 0.2.0。macOS 和 Linux 包仍標為 experimental，跨平台驗證繼續進行。
+目前原始碼版本為 0.2.1。發布包包含重新建置的 Windows 桌面程式和三個平台的獨立 CLI。macOS 和 Linux 包仍標為 experimental，更廣泛的平台驗證繼續進行。
 
 ## 從發布包安裝
 
-請從 GitHub Releases 頁面查看已發布的安裝包。v0.2.0 的發布流程產生：
+請從 GitHub Releases 頁面查看已發布的安裝包。v0.2.1 的發布流程產生：
 
+- Windows 桌面程式和 CLI：`UrConnect-v0.2.1-windows-x64.zip`
 - Windows CLI：`urconnect-cli-windows-x64.exe`
-- macOS experimental: `UrConnect-v0.2.0-macos-arm64-experimental.tar.gz`
-- Linux experimental: `UrConnect-v0.2.0-linux-x64-experimental.tar.gz`
+- macOS experimental: `UrConnect-v0.2.1-macos-arm64-experimental.tar.gz`
+- Linux experimental: `UrConnect-v0.2.1-linux-x64-experimental.tar.gz`
 
-舊版 Windows 桌面程式 `UrConnect.exe` 仍在 v0.1.0 中單獨提供，可直接執行。macOS 和 Linux 發布包解壓後可執行 `UrConnect` 應用程式或可執行檔。v0.2.0 發布流程同時打包 README 中介紹的獨立 CLI。
+請完整解壓發布包後執行 Windows 的 `UrConnect.exe`，或 macOS/Linux 的 `UrConnect` 應用程式。Windows ZIP 已包含 Qt 執行環境。CLI 不需要 Qt 或圖形介面。
 
 ## 從源碼構建
 
 依賴：
 
-- CMake 3.13 或更新版本
+- CMake 3.15 或更新版本
 - 支援 C++11 的編譯器
 - Qt 5.15 Core、Gui、Widgets、OpenGL 模組
 - Boost 標頭

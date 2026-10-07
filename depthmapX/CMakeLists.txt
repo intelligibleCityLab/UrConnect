@@ -158,7 +158,7 @@ if(MSVC)
         icons.rc
     )
     set_target_properties(${APP_NAME} PROPERTIES 
-        LINK_FLAGS "/ENTRY:mainCRTStartup /NODEFAULTLIB:libcmt.lib"
+        LINK_FLAGS "/ENTRY:mainCRTStartup"
         RUNTIME_OUTPUT_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
     )
 elseif(UNIX AND NOT APPLE)
@@ -222,13 +222,7 @@ target_link_libraries(${APP_NAME}
     Qt5::OpenGL
     OpenGL::GL
     OpenGL::GLU
-    spdlog::spdlog
-    $<$<PLATFORM_ID:Windows>:ucrt.lib>
-    $<$<PLATFORM_ID:Windows>:vcruntime.lib>
-    $<$<PLATFORM_ID:Windows>:msvcrt.lib>
-    $<$<AND:$<PLATFORM_ID:Windows>,$<CONFIG:Debug>>:ucrtd.lib>
-    $<$<AND:$<PLATFORM_ID:Windows>,$<CONFIG:Debug>>:vcruntimed.lib>
-    $<$<AND:$<PLATFORM_ID:Windows>,$<CONFIG:Debug>>:msvcrtd.lib>
+    spdlog::spdlog_header_only
     $<$<PLATFORM_ID:Windows>:kernel32.lib>
     $<$<PLATFORM_ID:Windows>:user32.lib>
     $<$<PLATFORM_ID:Windows>:gdi32.lib>
@@ -242,6 +236,8 @@ target_link_libraries(${APP_NAME}
     $<$<PLATFORM_ID:Windows>:odbc32.lib>
     $<$<PLATFORM_ID:Windows>:odbccp32.lib>
 )
+
+target_compile_definitions(${APP_NAME} PRIVATE NOMINMAX)
 
 # 设置目标属性
 set_target_properties(${APP_NAME} PROPERTIES
