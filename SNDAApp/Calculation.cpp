@@ -1,5 +1,4 @@
-﻿#include "stdafx.h"
-#include "Calculation.h"
+﻿#include "Calculation.h"
 #include <boost/graph/dijkstra_shortest_paths.hpp>
 #include <boost/config.hpp>
 #include <boost/graph/graph_traits.hpp>
@@ -29,6 +28,7 @@
 #include <limits>
 #include <stdexcept>
 #include "CSVProcess.h"
+#include "Logger.h"
 
 #ifndef _WIN32
 inline void Sleep(unsigned int milliseconds)
@@ -2411,6 +2411,8 @@ void Calculation::initPara(ShapeFileAccessor &fileAccessor, Graph &g, std::strin
 	std::string txJunctionDegree, std::string txJunctionsLimit, std::string txAngleThreshold2, std::string txNewJnc, std::vector<std::string> &weightAttributesSet,
 	bool ckNetreach, bool ckGeodesics, bool ckPath)
 {
+	URC_LOG_INFO("initPara: file={}, MR={}, DR={}, JnR={}, JnDDL={}, Junctions={}, Wgt={}, Netreach={}, Geodesics={}, Path={}",
+		infileStr, ckMetricReach, ckDirectionalReach, ckJncR, ckJncDDL, ckJunctions, ckWgt, ckNetreach, ckGeodesics, ckPath);
 	////距离无向图
 	//m_g.clear();
 	//m_g.copy_impl(g);
@@ -2834,6 +2836,7 @@ void Calculation::init_Net_para(ShapeFileAccessor &fileAccessor, Graph &g, std::
 }
 
 void Calculation::init_dbf_path(std::string infileStr) {
+	URC_LOG_DEBUG("init_dbf_path: {}", infileStr);
 	//输入输出路径
 	infilepath = infileStr;
 	outfilepath = dirOf(infilepath);
@@ -3334,6 +3337,7 @@ bool Calculation::getWeightDataByName(std::string infilepath, std::string WgtLim
 	int fieldIndex = DBFGetFieldIndex(hDBF, WgtLimitStr.c_str());
 	if (fieldIndex == -1)	//字段不存在，返回false
 	{
+		URC_LOG_WARN("getWeightDataByName: Field '{}' not found in {}", WgtLimitStr, dbfFile);
 		DBFClose(hDBF);
 		return false;
 	}
@@ -3585,7 +3589,8 @@ void Calculation::setMultiPara(ShapeFileAccessor &fileAccessor, int ord, int len
 
 void Calculation::MultiCalculate(ShapeFileAccessor &fileAccessor,long long pos)
 {
-		//设置用哪个CPU核心处理该线程			
+	URC_LOG_DEBUG("MultiCalculate started on core mask {}", pos);
+		//设置用哪个CPU核心处理该线程
 	SetThreadAffinityMask(GetCurrentThread(), pos);
 	// std::string threadIdString = "子线程id:" + std::to_string(GetCurrentThreadId()) + "  ";
 	// OutputDebugString(threadIdString.c_str());
@@ -8952,6 +8957,7 @@ void Calculation::CSVRenameField(std::string csvFilePath, std::string old_name, 
 	CSVProcess& csvProcessor = CSVProcess::getInstance();
 	if (!csvProcessor.open(csvFilePath)) {
 		std::cerr << "Error: Unable to open CSV file at " << csvFilePath << std::endl;
+		URC_LOG_ERROR("CSVRenameField: Failed to open CSV file: {}", csvFilePath);
 		return;
 	}
 	csvProcessor.renameField(old_name, new_name);
@@ -8963,6 +8969,7 @@ void Calculation::CSVAddField(std::string csvFilePath, std::string new_name) {
 	CSVProcess& csvProcessor = CSVProcess::getInstance();
 	if (!csvProcessor.open(csvFilePath)) {
 		std::cerr << "Error: Unable to open CSV file at " << csvFilePath << std::endl;
+		URC_LOG_ERROR("CSVAddField: Failed to open CSV file: {}", csvFilePath);
 		return;
 	}
 	csvProcessor.addField(new_name);
@@ -8973,6 +8980,7 @@ void Calculation::CSVDeleteField(std::string csvFilePath, std::string old_name) 
 	CSVProcess& csvProcessor = CSVProcess::getInstance();
 	if (!csvProcessor.open(csvFilePath)) {
 		std::cerr << "Error: Unable to open CSV file at " << csvFilePath << std::endl;
+		URC_LOG_ERROR("CSVDeleteField: Failed to open CSV file: {}", csvFilePath);
 		return;
 	}
 	csvProcessor.deleteField(old_name);
@@ -8983,6 +8991,7 @@ void Calculation::CSVUpdateField(std::string csvFilePath, std::string old_name, 
 	CSVProcess& csvProcessor = CSVProcess::getInstance();
 	if (!csvProcessor.open(csvFilePath)) {
 		std::cerr << "Error: Unable to open CSV file at " << csvFilePath << std::endl;
+		URC_LOG_ERROR("CSVUpdateField: Failed to open CSV file: {}", csvFilePath);
 		return;
 	}
 	csvProcessor.updateField(old_name,data);
@@ -8994,6 +9003,7 @@ void Calculation::modifyCSV(const std::map<int, double>& result, const std::stri
 
 	if (!csvProcessor.open(outPath)) {
 		std::cerr << "Error: Unable to open CSV file at " << outPath << std::endl;
+		URC_LOG_ERROR("modifyCSV: Failed to open CSV file: {}", outPath);
 		return;
 	}
 

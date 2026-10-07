@@ -1,5 +1,4 @@
-﻿#include "stdafx.h"
-#include "ShapeObject.h"
+﻿#include "ShapeObject.h"
 
 #include <cstring>
 

@@ -1,5 +1,5 @@
-﻿# UrConnect 项目构建配置
-cmake_minimum_required(VERSION 3.13.0)
+# UrConnect 项目构建配置
+cmake_minimum_required(VERSION 3.14.0)
 if(POLICY CMP0091)
     cmake_policy(SET CMP0091 NEW)
 endif()
@@ -25,7 +25,8 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" OR
     set(warnings "-Wall -Wextra")
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
     set(warnings "/W4 /EHsc")
-    execute_process(COMMAND make_version_header.bat WORKING_DIRECTORY depthmapX)
+    # Treat source files as UTF-8 encoded (avoids misinterpreting multi-byte chars)
+    add_compile_options(/utf-8)
 endif()
 
 # 策略设置
@@ -82,6 +83,30 @@ string(TIMESTAMP APP_DATE %Y-%m-%d)
 configure_file("${CMAKE_SOURCE_DIR}/version_defs.h.in" "${CMAKE_BINARY_DIR}/version_defs.h" @ONLY)
 
 # Shapelib and the CLI can be built without Qt for headless CI and servers.
+if(MSVC)
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT")
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MT")
+endif()
+
+# Shapelib and the CLI can be built without Qt for headless CI and servers.
+
+# ============ 3rd Party Dependencies: spdlog  ============
+# FetchContent downloads spdlog（header-only mode）
+include(FetchContent)
+FetchContent_Declare(
+    spdlog
+    GIT_REPOSITORY https://github.com/gabime/spdlog.git
+    GIT_TAG        v1.13.0
+    GIT_SHALLOW    TRUE
+)
+# 让 spdlog 编译为静态库，避免符号冲突
+set(SPDLOG_BUILD_SHARED OFF CACHE BOOL "Build shared spdlog" FORCE)
+set(SPDLOG_BUILD_EXAMPLE OFF CACHE BOOL "Build spdlog examples" FORCE)
+set(SPDLOG_BUILD_TESTS OFF CACHE BOOL "Build spdlog tests" FORCE)
+set(SPDLOG_BUILD_BENCH OFF CACHE BOOL "Build spdlog benchmarks" FORCE)
+set(SPDLOG_INSTALL OFF CACHE BOOL "Generate spdlog install target" FORCE)
+FetchContent_MakeAvailable(spdlog)
+
 add_subdirectory(SNDAApp/lib)
 add_subdirectory(cli)
 

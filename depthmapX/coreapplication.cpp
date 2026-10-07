@@ -1,4 +1,4 @@
-﻿// Copyright (C) 2017 Petros Koutsolampros
+// Copyright (C) 2017 Petros Koutsolampros
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -14,36 +14,31 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "depthmapX/coreapplication.h"
+#include "Logger.h"
 #include <QDesktopWidget>
 
 int CoreApplication::exec() {
+    URC_LOG_INFO("CoreApplication::exec() starting...");
     SettingsImpl settings(new DefaultSettingsFactory);
-
-    //if (!settings.readSetting(SettingTag::licenseAccepted, false).toBool())
-    //{
-    //    auto dummy = MainWindowFactory::getLicenseDialog();
-    //    dummy->setModal(true);
-    //    dummy->setWindowTitle(TITLE_BASE);
-    //    dummy->exec();
-    //    if ( dummy->result() == QDialog::Rejected) {
-    //        return 0;
-    //    }
-    //    settings.writeSetting(SettingTag::licenseAccepted, true);
-    //}
+    URC_LOG_DEBUG("Settings factory initialized");
 
     auto args = arguments();
     QString fileToLoad;
+    URC_LOG_DEBUG("Arguments retrieved, count: {}", args.size());
+    URC_LOG_DEBUG("About to create main window");
     if (args.length() == 2)
     {
         // Ignore flag-like arguments, e.g. the -psn_0_xxx process serial
         // number Finder passes when launching the app on macOS.
         if (!args[1].startsWith('-')) {
             fileToLoad = args[1];
+            URC_LOG_INFO("Command line file to load: {}", fileToLoad.toUtf8().constData());
         }
     }
 
     // Window construction may itself dispatch a FileOpen event.
     mMainWindow = MainWindowFactory::getMainWindow(QString(), settings);
+    URC_LOG_INFO("Main window created successfully");
     if (!mFileToLoad.isEmpty()) {
         fileToLoad = mFileToLoad;
         mFileToLoad.clear();
@@ -52,5 +47,9 @@ int CoreApplication::exec() {
         mMainWindow->loadFile(fileToLoad);
     }
     mMainWindow->show();
-    return QApplication::exec();
+    URC_LOG_INFO("Main window shown, entering Qt event loop");
+
+    int retCode = QApplication::exec();
+    URC_LOG_INFO("Qt event loop exited with code {}", retCode);
+    return retCode;
 }

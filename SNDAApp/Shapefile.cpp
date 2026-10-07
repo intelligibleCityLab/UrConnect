@@ -1,5 +1,4 @@
-﻿#include "stdafx.h"
-#include "Shapefile.h"
+﻿#include "Shapefile.h"
 
 
 Shapefile::Shapefile()

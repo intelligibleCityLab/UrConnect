@@ -1,4 +1,4 @@
-﻿# depthmapX 应用程序构建配置
+# depthmapX 应用程序构建配置
 
 # 应用程序名称
 set(APP_NAME UrConnect)
@@ -31,7 +31,6 @@ set(SOURCES
     ../SNDAApp/Calculation.cpp
     ../SNDAApp/Shapefile.cpp
     ../SNDAApp/ShapeFileAccessor.cpp
-    ../SNDAApp/stdafx.cpp
     ../SNDAApp/ShapeObject.cpp
     AttributesWin.cpp
     qcolordialogbutton.cpp
@@ -59,6 +58,7 @@ set(SOURCES
     main.cpp
     coreapplication.cpp
     CSVProcess.cpp
+    Logger.cpp
 )
 
 # 头文件列表（用于 IDE 显示）
@@ -91,6 +91,7 @@ set(HEADERS
     settingsimpl.h
     treeWindow.h
     UrbanConnectAnalyzer.h
+    Logger.h
 )
 
 # UI 文件
@@ -210,17 +211,18 @@ if(WIN32)
 endif(WIN32)
 
 # 链接依赖
-target_link_libraries(${APP_NAME} 
-    shp 
-    salalib 
-    genlib 
-    mgraph440 
-    Qt5::Core 
-    Qt5::Gui 
-    Qt5::Widgets 
-    Qt5::OpenGL 
-    OpenGL::GL 
+target_link_libraries(${APP_NAME}
+    shp
+    salalib
+    genlib
+    mgraph440
+    Qt5::Core
+    Qt5::Gui
+    Qt5::Widgets
+    Qt5::OpenGL
+    OpenGL::GL
     OpenGL::GLU
+    spdlog::spdlog
     $<$<PLATFORM_ID:Windows>:ucrt.lib>
     $<$<PLATFORM_ID:Windows>:vcruntime.lib>
     $<$<PLATFORM_ID:Windows>:msvcrt.lib>
