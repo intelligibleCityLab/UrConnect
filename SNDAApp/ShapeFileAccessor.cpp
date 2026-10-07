@@ -1,5 +1,4 @@
-﻿#include "stdafx.h"
-#include "ShapeFileAccessor.h"
+﻿#include "ShapeFileAccessor.h"
 #include "Logger.h"
 #include <map>
 #include <vector>
@@ -14,8 +13,14 @@
 #include <math.h>
 #include <mutex>
 #include <cmath>
+#include <stdexcept>
 #include "dirutils.h"
 #include <iomanip>
+
+#ifdef _WIN32
+#define NOMINMAX  // 阻止 windows.h 把 min/max 定义成宏，避免破坏 std::min/std::max
+#include <windows.h>
+#endif
 
 #define PI 3.141592653
 //shapefile.h中的静态成员
@@ -148,7 +153,7 @@ int ShapeFileAccessor::generateTXT(std::string shpfilename, std::string txtFileN
 
 	if (result != 0) {
 		URC_LOG_ERROR("generateTXT: Failed to read shape file: {}", shpfilename);
-		AfxMessageBox(_T("Read Shape File failed"), MB_OK | MB_ICONERROR);
+		throw std::runtime_error("Read Shape File failed");
 		return -1;
 	}
 	else {
@@ -158,20 +163,18 @@ int ShapeFileAccessor::generateTXT(std::string shpfilename, std::string txtFileN
 		if (idFieldIndex != "FID") {
 			if (hDBF == NULL) {
 				URC_LOG_ERROR("generateTXT: Failed to open DBF file: {}", dbFilePath);
-				AfxMessageBox(_T("Read dbf File failed"), MB_OK | MB_ICONERROR);
+				throw std::runtime_error("Read dbf File failed");
 				return -1;
 			}
 			fieldIndex = DBFGetFieldIndex(hDBF, idFieldIndex.c_str());
 			if (fieldIndex < 0) {
 				URC_LOG_ERROR("generateTXT: Field '{}' not found in DBF: {}", idFieldIndex, dbFilePath);
-				AfxMessageBox(_T("Read dbf File failed"), MB_OK | MB_ICONERROR);
+				throw std::runtime_error("Read dbf File failed");
 				return -1;
 			}
 		}
 
 		int count = shapefile.GetEntityCount();
-
-		CString shapeType(shapefile.GetTypeString().c_str());
 
 		ShapeObject spObject;
 
@@ -274,7 +277,7 @@ int ShapeFileAccessor::generateFileStream(std::string shpfilename, std::string i
 	shapeType = shapefile.GetType();
 
 	if (result != 0) {
-		AfxMessageBox(_T("Read Shape File failed"), MB_OK | MB_ICONERROR);
+		throw std::runtime_error("Read Shape File failed");
 		return -1;
 	}
 	else {
@@ -283,19 +286,17 @@ int ShapeFileAccessor::generateFileStream(std::string shpfilename, std::string i
 		int fieldIndex;
 		if (idFieldIndex != "FID") {
 			if (hDBF == NULL) {
-				AfxMessageBox(_T("Read dbf File failed"), MB_OK | MB_ICONERROR);
+				throw std::runtime_error("Read dbf File failed");
 				return -1;
 			}
 			fieldIndex = DBFGetFieldIndex(hDBF, idFieldIndex.c_str());
 			if (fieldIndex < 0) {
-				AfxMessageBox(_T("Read dbf File failed"), MB_OK | MB_ICONERROR);
+				throw std::runtime_error("Read dbf File failed");
 				return -1;
 			}
 		}
 
 		int count = shapefile.GetEntityCount();
-
-		CString shapeType(shapefile.GetTypeString().c_str());
 
 		ShapeObject spObject;
 
@@ -410,7 +411,7 @@ int ShapeFileAccessor::generateDispalyStream(std::string shpfilename, std::strin
 	shapeType = shapefile.GetType();
 
 	if (result != 0) {
-		AfxMessageBox(_T("Read Shape File failed"), MB_OK | MB_ICONERROR);
+		throw std::runtime_error("Read Shape File failed");
 		shapefile.Close();
 		return -1;
 	}
@@ -421,19 +422,17 @@ int ShapeFileAccessor::generateDispalyStream(std::string shpfilename, std::strin
 	int fieldIndex;
 	if (idFieldIndex != "FID") {
 		if (hDBF == NULL) {
-			AfxMessageBox(_T("Read dbf File failed"), MB_OK | MB_ICONERROR);
+			throw std::runtime_error("Read dbf File failed");
 			return -1;
 		}
 		fieldIndex = DBFGetFieldIndex(hDBF, idFieldIndex.c_str());
 		if (fieldIndex < 0) {
-			AfxMessageBox(_T("Read dbf File failed"), MB_OK | MB_ICONERROR);
+			throw std::runtime_error("Read dbf File failed");
 			return -1;
 		}
 	}
 
 	int count = shapefile.GetEntityCount();
-
-	CString shapeType(shapefile.GetTypeString().c_str());
 
 	ShapeObject spObject;
 
@@ -547,7 +546,7 @@ void ShapeFileAccessor::getCoordinateData(std::string shpfilename, std::vector<s
 	shapeType = shapefile.GetType();
 
 	if (result != 0) {
-		AfxMessageBox(_T("Read Shape File failed"), MB_OK | MB_ICONERROR);
+		throw std::runtime_error("Read Shape File failed");
 		return;
 	}
 	else {
@@ -556,8 +555,6 @@ void ShapeFileAccessor::getCoordinateData(std::string shpfilename, std::vector<s
 		//申请空间
 		//coordinateData.reserve(count * 4 * sizeof(double));
 		std::vector<double> tmpVec;
-
-		CString shapeType(shapefile.GetTypeString().c_str());
 
 		ShapeObject spObject;
 
@@ -593,15 +590,13 @@ void ShapeFileAccessor::BaseInputError(std::string str)
 	//std::string strT = str + baseStr;
 	std::string strT = str;
 
-	CString cstrT;
-	cstrT = strT.c_str();
-	AfxMessageBox(cstrT, MB_OK | MB_ICONERROR);
+	throw std::runtime_error(strT);
 }
 
 void ShapeFileAccessor::FileNotExist(std::string str)
 {
 	URC_LOG_ERROR("FileNotExist: {}", str);
-	AfxMessageBox(_T("File not exist, please check"), MB_OK | MB_ICONERROR);
+	throw std::runtime_error("File not exist, please check");
 }
 
 Graph* ShapeFileAccessor::ProcessShapeFile()
@@ -656,8 +651,8 @@ inline double AngleCalculate(double vec1_x, double vec1_y, double vec2_x, double
 
 	//计算余弦：cos=a*b/[|a|*|b|]= (x1x2 + y1y2) / [√[x1 ^ 2 + y1 ^ 2] * √[x2 ^ 2 + y2 ^ 2]]
 	cosr = (vec1_x * vec2_x + vec1_y * vec2_y) / sqrt(pow(vec1_x, 2) + pow(vec1_y, 2)) / sqrt(pow(vec2_x, 2) + pow(vec2_y, 2));
-	cosr = max(-1, cosr);
-	cosr = min(1, cosr);
+	cosr = std::max(-1.0, cosr);
+	cosr = std::min(1.0, cosr);
 
 	//计算角度
 	angle = acos(cosr) * 180 / PI;
@@ -676,9 +671,11 @@ void ShapeFileAccessor::FirstCalculateAngles() {
 }
 
 void ShapeFileAccessor::thread_calculate_angle(ShapeFileAccessor *temp, int pos, int startPos, int roadLength,long long cpu_pos) {
+#ifdef _WIN32
 	SetThreadAffinityMask(GetCurrentThread(), cpu_pos);
+#endif
 	int stopPos = startPos + roadLength;
-	stopPos = min(stopPos, temp->roadNode2.size());
+	stopPos = std::min(stopPos, (int)temp->roadNode2.size());
 	for (int startRoad=startPos;startRoad< stopPos;startRoad++){
 		//新建当前边的邻接表
 		std::set<int> adj_list;
@@ -886,13 +883,18 @@ void ShapeFileAccessor::Multi_thread_for_ReadFile(ShapeFileAccessor *temp, std::
 	AttributesDataVec.clear();
 
 	//探测cpu逻辑核心数目
+	int cpu_count = static_cast<int>(std::thread::hardware_concurrency());
+	if (cpu_count <= 0) cpu_count = 4;
+#ifdef _WIN32
 	SYSTEM_INFO si;
 	GetSystemInfo(&si);
-	thread_num = int(si.dwNumberOfProcessors);
+	cpu_count = int(si.dwNumberOfProcessors);
+#endif
+	thread_num = cpu_count;
 
 	//获取cpu最大提供线程数，超了会降低效率
 	int threadMaxNum = std::thread::hardware_concurrency();
-	thread_num = min(threadMaxNum, int(si.dwNumberOfProcessors)) * 2;
+	thread_num = std::min(threadMaxNum, cpu_count) * 2;
 
 	//准备接数据结构
 	std::vector<int> StartPosVec, ReadLengthVec;
@@ -918,8 +920,8 @@ void ShapeFileAccessor::Multi_thread_for_ReadFile(ShapeFileAccessor *temp, std::
 	}
 
 	//将线程跟CPU逻辑核心进行绑定，不允许出现线程切换
-	int cpu_num = int(si.dwNumberOfProcessors); 
-	long long cpu_pos = static_cast<long long>(pow(2, cpu_num - 1));
+	int cpu_num = cpu_count;
+	long long cpu_pos = static_cast<long long>(pow(2, std::max(1, cpu_num - 1)));
 
 	//按边顺序依次启动
 	for (int i = 0; i < thread_num; i++)
@@ -930,7 +932,7 @@ void ShapeFileAccessor::Multi_thread_for_ReadFile(ShapeFileAccessor *temp, std::
 		cpu_pos = cpu_pos >> 1;
 		if (cpu_pos == 0)
 		{
-			cpu_pos = static_cast<long long>(pow(2, cpu_num - 1));
+			cpu_pos = static_cast<long long>(pow(2, std::max(1, cpu_num - 1)));
 		}
 	}
 
@@ -990,10 +992,14 @@ void ShapeFileAccessor::multiThreadCalculateAngles(ShapeFileAccessor *temp) {
 	}
 
 	//将线程跟CPU逻辑核心进行绑定，不允许出现线程切换
+	int cpu_num = static_cast<int>(std::thread::hardware_concurrency());
+	if (cpu_num <= 0) cpu_num = 4;
+#ifdef _WIN32
 	SYSTEM_INFO si;
 	GetSystemInfo(&si);
-	int cpu_num = int(si.dwNumberOfProcessors); 
-	long long cpu_pos = static_cast<long long>(pow(2, cpu_num - 1));
+	cpu_num = int(si.dwNumberOfProcessors);
+#endif
+	long long cpu_pos = static_cast<long long>(pow(2, std::max(1, cpu_num - 1)));
 
 	//按边顺序依次启动
 	for (int i = 0; i < thread_num; i++)
@@ -1039,13 +1045,11 @@ void ShapeFileAccessor::thread_process_shapefile(ShapeFileAccessor *temp, int po
 	int result = shapefile.Open(temp->m_filepath);
 
 	if (result != 0) {
-		AfxMessageBox(_T("Read Shape File failed"), MB_OK | MB_ICONERROR);
+		throw std::runtime_error("Read Shape File failed");
 		return;
 	}
 	
 	int count = shapefile.GetEntityCount();
-
-	CString shapeType(shapefile.GetTypeString().c_str());
 
 	ShapeObject spObject;
 
@@ -1162,9 +1166,11 @@ void ShapeFileAccessor::thread_process_attributes(ShapeFileAccessor *temp, Attri
 }
 
 void ShapeFileAccessor::thread_judge_angle(ShapeFileAccessor *temp, int pos, int startPos, int roadLength, double angleLimit, double Jnc_t_limit, long long cpu_pos) {
+#ifdef _WIN32
 	SetThreadAffinityMask(GetCurrentThread(), cpu_pos);
+#endif
 	int stopPos = startPos + roadLength;
-	stopPos = min(stopPos, temp->roadNode2.size());
+	stopPos = std::min(stopPos, (int)temp->roadNode2.size());
 	for (int startRoad = startPos; startRoad < stopPos; startRoad++){
 		//遍历查找邻接边
 		int endNode = temp->roadNode2[startRoad][1];
@@ -1244,10 +1250,14 @@ void ShapeFileAccessor::multiThreadJudgeAngles(ShapeFileAccessor *temp, double a
 	}
 
 	//将线程跟CPU逻辑核心进行绑定，不允许出现线程切换
+	int cpu_num = static_cast<int>(std::thread::hardware_concurrency());
+	if (cpu_num <= 0) cpu_num = 4;
+#ifdef _WIN32
 	SYSTEM_INFO si;
 	GetSystemInfo(&si);
-	int cpu_num = int(si.dwNumberOfProcessors);
-	long long cpu_pos = static_cast<long long>(pow(2, cpu_num - 1));
+	cpu_num = int(si.dwNumberOfProcessors);
+#endif
+	long long cpu_pos = static_cast<long long>(pow(2, std::max(1, cpu_num - 1)));
 
 	//按边顺序依次启动
 	for (int i = 0; i < thread_num; i++)
@@ -1259,7 +1269,7 @@ void ShapeFileAccessor::multiThreadJudgeAngles(ShapeFileAccessor *temp, double a
 		cpu_pos = cpu_pos >> 1;
 		if (cpu_pos == 0)
 		{
-			cpu_pos = static_cast<long long>(pow(2, cpu_num - 1));
+			cpu_pos = static_cast<long long>(pow(2, std::max(1, cpu_num - 1)));
 		}
 	}
 
@@ -1359,10 +1369,14 @@ void ShapeFileAccessor::multiThreadProcessShapeFile(ShapeFileAccessor *temp, Att
 	}
 
 	//将线程跟CPU逻辑核心进行绑定，不允许出现线程切换
+	int cpu_num = static_cast<int>(std::thread::hardware_concurrency());
+	if (cpu_num <= 0) cpu_num = 4;
+#ifdef _WIN32
 	SYSTEM_INFO si;
 	GetSystemInfo(&si);
-	int cpu_num = int(si.dwNumberOfProcessors);
-	long long cpu_pos = static_cast<long long>(pow(2, cpu_num - 1));
+	cpu_num = int(si.dwNumberOfProcessors);
+#endif
+	long long cpu_pos = static_cast<long long>(pow(2, std::max(1, cpu_num - 1)));
 
 	//按边顺序依次启动
 	for (int i = 0; i < thread_num; i++)
@@ -1375,7 +1389,7 @@ void ShapeFileAccessor::multiThreadProcessShapeFile(ShapeFileAccessor *temp, Att
 		cpu_pos = cpu_pos >> 1;
 		if (cpu_pos == 0)
 		{
-			cpu_pos = static_cast<long long>(pow(2, cpu_num - 1));
+			cpu_pos = static_cast<long long>(pow(2, std::max(1, cpu_num - 1)));
 		}
 	}
 
@@ -1451,7 +1465,9 @@ void ShapeFileAccessor::multiThreadProcessShapeFile(ShapeFileAccessor *temp, Att
 
 void ShapeFileAccessor::multiReadFile(ShapeFileAccessor *temp, std::string shpfilename, std::string idFieldIndex, int pos,
 	int startPos, int readLength, long long cpu_pos) {
+#ifdef _WIN32
 	SetThreadAffinityMask(GetCurrentThread(), cpu_pos);
+#endif
 	std::stringbuf tmp_buf;
 	std::istream inFile(&tmp_buf);
 	std::ostream outFile(&tmp_buf);
@@ -1465,7 +1481,7 @@ void ShapeFileAccessor::multiReadFile(ShapeFileAccessor *temp, std::string shpfi
 	int shapeType = shapefile.GetType();
 
 	if (result != 0) {
-		AfxMessageBox(_T("Read Shape File failed"), MB_OK | MB_ICONERROR);
+		throw std::runtime_error("Read Shape File failed");
 		return;
 	}
 
@@ -1480,13 +1496,13 @@ void ShapeFileAccessor::multiReadFile(ShapeFileAccessor *temp, std::string shpfi
 
 	if (idFieldIndex != "FID") {
 		if (hDBF == NULL) {
-			AfxMessageBox(_T("Read dbf File failed"), MB_OK | MB_ICONERROR);
+			throw std::runtime_error("Read dbf File failed");
 			shapefile.Close();
 			return;
 		}
 		fieldIndex = DBFGetFieldIndex(hDBF, idFieldIndex.c_str());
 		if (fieldIndex < 0) {
-			AfxMessageBox(_T("Read dbf File failed"), MB_OK | MB_ICONERROR);
+			throw std::runtime_error("Read dbf File failed");
 			shapefile.Close();
 			return;
 		}

@@ -31,7 +31,6 @@ set(SOURCES
     ../SNDAApp/Calculation.cpp
     ../SNDAApp/Shapefile.cpp
     ../SNDAApp/ShapeFileAccessor.cpp
-    ../SNDAApp/stdafx.cpp
     ../SNDAApp/ShapeObject.cpp
     AttributesWin.cpp
     qcolordialogbutton.cpp

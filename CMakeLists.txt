@@ -27,7 +27,6 @@ elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
     set(warnings "/W4 /EHsc")
     # Treat source files as UTF-8 encoded (avoids misinterpreting multi-byte chars)
     add_compile_options(/utf-8)
-    execute_process(COMMAND make_version_header.bat WORKING_DIRECTORY depthmapX)
 endif()
 
 # 策略设置
@@ -89,8 +88,10 @@ if(MSVC)
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MT")
 endif()
 
-# ============ 第三方依赖：spdlog 日志库 ============
-# 通过 FetchContent 自动下载 spdlog（header-only 模式更易集成）
+# Shapelib and the CLI can be built without Qt for headless CI and servers.
+
+# ============ 3rd Party Dependencies: spdlog  ============
+# FetchContent downloads spdlog（header-only mode）
 include(FetchContent)
 FetchContent_Declare(
     spdlog
@@ -106,9 +107,6 @@ set(SPDLOG_BUILD_BENCH OFF CACHE BOOL "Build spdlog benchmarks" FORCE)
 set(SPDLOG_INSTALL OFF CACHE BOOL "Generate spdlog install target" FORCE)
 FetchContent_MakeAvailable(spdlog)
 
-# 子目录构建
-add_subdirectory(genlib)
-add_subdirectory(mgraph440)
 add_subdirectory(SNDAApp/lib)
 add_subdirectory(cli)
 

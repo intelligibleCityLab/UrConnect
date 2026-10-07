@@ -8,6 +8,7 @@
 
 #include "ShapeFileAccessor.h"
 #include "Calculation.h"
+#include "Logger.h"
 #include "version_defs.h"
 
 #include <algorithm>

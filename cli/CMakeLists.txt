@@ -17,9 +17,9 @@ set(URCONNECT_CLI_SOURCES
     ../SNDAApp/Calculation.cpp
     ../SNDAApp/Shapefile.cpp
     ../SNDAApp/ShapeFileAccessor.cpp
-    ../SNDAApp/stdafx.cpp
     ../SNDAApp/ShapeObject.cpp
     ../depthmapX/CSVProcess.cpp
+    ../depthmapX/Logger.cpp
 )
 
 # Keep the CLI self-contained. The desktop app continues to use the shared
@@ -44,7 +44,7 @@ target_include_directories(urconnect-cli PRIVATE
 )
 
 find_package(Threads REQUIRED)
-target_link_libraries(urconnect-cli PRIVATE urconnect-cli-shp Threads::Threads)
+target_link_libraries(urconnect-cli PRIVATE urconnect-cli-shp Threads::Threads spdlog::spdlog)
 
 if(BUILD_TESTING)
     add_executable(urconnect-test-network tests/test_network.cpp)

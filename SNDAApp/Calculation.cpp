@@ -1,5 +1,4 @@
-﻿#include "stdafx.h"
-#include "Calculation.h"
+﻿#include "Calculation.h"
 #include <boost/graph/dijkstra_shortest_paths.hpp>
 #include <boost/config.hpp>
 #include <boost/graph/graph_traits.hpp>
