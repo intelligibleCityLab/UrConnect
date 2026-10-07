@@ -193,7 +193,7 @@ jobs:
           fi
           cp "$cli_path" package/
           package/urconnect-cli --version
-          QT_QPA_PLATFORM=offscreen perl -e '
+          perl -e '
             $pid = fork(); die "fork failed" unless defined $pid;
             if (!$pid) { exec "package/UrConnect.app/Contents/MacOS/UrConnect"; exit 127; }
             sleep 5;
