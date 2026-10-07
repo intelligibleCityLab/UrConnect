@@ -4849,6 +4849,10 @@ void MainWindow::outputCsvFiles(Calculation &CA, ShapeFileAccessor &FA) {
 void MainWindow::subsetProgressCount() {
 	//计时开始
 	T_timeBegin = clock();
+	time_t now_sub = time(nullptr);
+	URC_LOG_INFO("subsetProgressCount started. file={}, road_count={}",
+	             filename_qstr.toUtf8().constData(),
+	             FA.roadID.size());
 
 	process_pos = 0;
 	process_str = "calculating";
@@ -4867,7 +4871,7 @@ void MainWindow::subsetProgressCount() {
 			set_calculate_over(true);
 
 			process_str = "stopped";
-
+			URC_LOG_WARN("subsetProgressCount stopped by user. progress={}", process_pos);
 			//更新进度条
 			emit(this->pDisplaydow->ui->Button_start_scan->clicked());
 
@@ -4911,7 +4915,10 @@ void MainWindow::subsetProgressCount() {
 	//set_run_start(false);
 	set_needOver(false);
 	set_calculate_over(true);
-	URC_LOG_INFO("calculate over: %s", str.toUtf8().constData());
+	URC_LOG_INFO("subsetProgressCount finished. file={}, elapsed={}, road_count={}",
+	             filename_qstr.toUtf8().constData(),
+	             str.toUtf8().constData(),
+	             FA.roadID.size());
 
 	process_pos = this->nMax;
 	process_str = "calculate over: " + str;
@@ -4989,6 +4996,8 @@ void MainWindow::progressCount()
 
 	//计时开始
 	T_timeBegin = clock();
+	time_t now = time(nullptr);
+	URC_LOG_INFO("progressCount started at: {}", ctime(&now));
 
 	process_pos = 0;
 	process_str = "calculating";
@@ -5032,6 +5041,10 @@ void MainWindow::progressCount()
 
 			process_str = "stopped";
 
+			URC_LOG_WARN("progressCount stopped by user. progress={}, elapsed_so_far={}s",
+			             process_pos,
+			             (double)(clock() - T_timeBegin) / CLOCKS_PER_SEC);
+
 			//更新进度条
 			emit(this->pDisplaydow->ui->Button_start_scan->clicked());
 
@@ -5045,6 +5058,10 @@ void MainWindow::progressCount()
 			set_calculate_over(false);
 
 			process_str = "param error";
+
+			URC_LOG_ERROR("progressCount aborted: param error. progress={}, elapsed_so_far={}s",
+			              process_pos,
+			              (double)(clock() - T_timeBegin) / CLOCKS_PER_SEC);
 
 			//更新进度条
 			emit(this->pDisplaydow->ui->Button_start_scan->clicked());
@@ -5149,7 +5166,11 @@ void MainWindow::progressCount()
 	double endtime_sec = (double)(T_timeEnd - T_timeBegin) / double(CLOCKS_PER_SEC);
 	QString str = QString::number(endtime_sec, 'f', 3) + "s";
 	time_qstr = str;
-	URC_LOG_INFO("calculate over2: {}", str.toUtf8().constData());
+	URC_LOG_INFO("progressCount finished. type={}, file={}, elapsed={}, road_count={}",
+	             whichOpen(),
+	             filename_qstr.toUtf8().constData(),
+	             str.toUtf8().constData(),
+	             FA.roadID.size());
 
 	process_pos = this->nMax;
 	process_str = "calculate over: " + str;
@@ -7317,9 +7338,19 @@ void MainWindow::run_calculate()
 
 	//查看多线程是否开启
 	bool openMultiThread = work->ui.radioButton_3->isChecked();
+
+	URC_LOG_INFO("========== Calculation Start ==========");
+    URC_LOG_INFO("Calculation type  : {}", which);
+    URC_LOG_INFO("Multi-thread      : {}", openMultiThread ? "ON" : "OFF");
+    URC_LOG_INFO("Thread count      : {}", thread_num);
+    URC_LOG_INFO("Current file      : {}", filename_qstr.toUtf8().constData());
+    URC_LOG_INFO("Road count        : {}", FA.roadID.size());
+    URC_LOG_INFO("FromID count      : {}", CA.FromIDVec.size());
+
 	//bool openMultiThread = false;
 	if (!CheckThreadNumberInput()) {
 		//强制进度条退出
+		URC_LOG_WARN("run_calculate aborted: CheckThreadNumberInput failed. type={}", which);
 		set_needOver(true);
 		return;
 	}
@@ -7329,6 +7360,7 @@ void MainWindow::run_calculate()
 	switch (index) {
 	case 1:		//MR_all
 		if (!CheckReachMRInput()) {
+			URC_LOG_WARN("run_calculate aborted[MR_all]: CheckReachMRInput failed");
 			set_needOver(true);
 			break;
 		}
@@ -7339,6 +7371,7 @@ void MainWindow::run_calculate()
 		break; 
 	case 2:		//MR,相当于Net Reach中的MR
 		if (!CheckNetReachMRInput()) {
+			URC_LOG_WARN("run_calculate aborted[MR]: CheckNetReachMRInput failed");
 			set_needOver(true);
 			break;
 		}
@@ -7349,6 +7382,7 @@ void MainWindow::run_calculate()
 		break; 
 	case 3:		//DR_all
 		if (!CheckReachDRInput()) {
+			URC_LOG_WARN("run_calculate aborted[DR_all]: CheckReachDRInput failed");
 			set_needOver(true);
 			break;
 		}
@@ -7360,6 +7394,7 @@ void MainWindow::run_calculate()
 		break;
 	case 4:		//DR
 		if (!CheckNetReachDRInput()) {
+			URC_LOG_WARN("run_calculate aborted[DR]: CheckNetReachDRInput failed");
 			set_needOver(true);
 			break;
 		}
@@ -7370,6 +7405,7 @@ void MainWindow::run_calculate()
 		break;
 	case 5:		//JnR_all
 		if (!CheckReachJnRInput()) {
+			URC_LOG_WARN("run_calculate aborted[JnR_all]: CheckReachJnRInput failed");
 			set_needOver(true);
 			break;
 		}
@@ -7380,6 +7416,7 @@ void MainWindow::run_calculate()
 		break;
 	case 6:		//JnR
 		if (!CheckNetReachJnRInput()) {
+			URC_LOG_WARN("run_calculate aborted[JnR]: CheckNetReachJnRInput failed");
 			set_needOver(true);
 			break;
 		}
@@ -7390,6 +7427,7 @@ void MainWindow::run_calculate()
 		break;
 	case 7:		//MDR_all
 		if (!CheckReachMDRInput()) {
+			URC_LOG_WARN("run_calculate aborted[MDR_all]: CheckReachMDRInput failed");
 			set_needOver(true);
 			break;
 		}
@@ -7400,6 +7438,7 @@ void MainWindow::run_calculate()
 		break;
 	case 8:		//MDR
 		if (!CheckNetReachMDRInput()) {
+			URC_LOG_WARN("run_calculate aborted[MDR]: CheckNetReachMDRInput failed");
 			set_needOver(true);
 			break;
 		}
@@ -7412,6 +7451,7 @@ void MainWindow::run_calculate()
 		break;
 	case 10:	//MD，即Step Depth
 		if (!CheckDistanceModeInput()) {
+			URC_LOG_WARN("run_calculate aborted[MD]: CheckDistanceModeInput failed");
 			set_needOver(true);
 			break;
 		}
@@ -7424,10 +7464,11 @@ void MainWindow::run_calculate()
 		break;
 	case 12:	//PD
 		if (!CheckDistanceModeInput() || !CheckDistanceDRInput()) {
+			URC_LOG_WARN("run_calculate aborted[PD]: CheckDistanceModeInput or CheckDistanceDRInput failed");
 			set_needOver(true);
 			break;
 		}
-		if (!CheckDistanceModeInput() || !openMultiThread)
+		if (!openMultiThread)
 			Net_calculateDD_Single_thread();
 		else
 			Net_calculateDD_Multi_thread(); 
@@ -7436,6 +7477,7 @@ void MainWindow::run_calculate()
 		break;
 	case 14:	//JnD
 		if (!CheckDistanceModeInput() || !CheckDistanceJnRInput()) {
+			URC_LOG_WARN("run_calculate aborted[JnD]: CheckDistanceModeInput or CheckDistanceJnRInput failed");
 			set_needOver(true);
 			break;
 		}
@@ -7446,6 +7488,7 @@ void MainWindow::run_calculate()
 		break;
 	case 15:	//MRPA
 		if (!CheckGeodesicsFromIDInput() && !CheckGeodesicsCSVInput() && !CheckGeodesicsToIDInput() ) {
+			URC_LOG_WARN("run_calculate aborted[MRPA]: CheckGeodesicsFromIDInput, CheckGeodesicsCSVInput, CheckGeodesicsToIDInput failed");
 			set_needOver(true);
 			break;
 		}
@@ -7456,6 +7499,7 @@ void MainWindow::run_calculate()
 		break;
 	case 16:	//DRPA
 		if (!CheckGeodesicsDRInput() || !CheckGeodesicsCSVInput() && !CheckGeodesicsFromIDInput() && !CheckGeodesicsToIDInput() ) {
+			URC_LOG_WARN("run_calculate aborted[DRPA]: CheckGeodesicsDRInput, CheckGeodesicsCSVInput, CheckGeodesicsFromIDInput, CheckGeodesicsToIDInput failed");
 			set_needOver(true);
 			break;
 		}
@@ -7466,6 +7510,7 @@ void MainWindow::run_calculate()
 		break;
 	case 17:	//JnRPA
 		if (!CheckGeodesicsJnRInput() || !CheckGeodesicsCSVInput() &&!CheckGeodesicsFromIDInput() && !CheckGeodesicsToIDInput() ) {
+			URC_LOG_WARN("run_calculate aborted[JnRPA]: CheckGeodesicsJnRInput, CheckGeodesicsCSVInput, CheckGeodesicsFromIDInput, CheckGeodesicsToIDInput failed");
 			set_needOver(true);
 			break;
 		}
@@ -7476,6 +7521,7 @@ void MainWindow::run_calculate()
 		break;
 	case 21:
 		if (!CheckReachDDLInput()) {
+			URC_LOG_WARN("run_calculate aborted[DDL_all]: CheckReachDDLInput failed");
 			set_needOver(true);
 			break;
 		}
@@ -7486,6 +7532,7 @@ void MainWindow::run_calculate()
 		break;
 	case 22:
 		if (!CheckReachMDInput()) {
+			URC_LOG_WARN("run_calculate aborted[MD_all]: CheckReachMDInput failed");
 			set_needOver(true);
 			break;
 		}
@@ -7493,6 +7540,7 @@ void MainWindow::run_calculate()
 		break;
 	case 23:
 		if (!CheckReachJnDDLInput()) {
+			URC_LOG_WARN("run_calculate aborted[JnDDL_all]: CheckReachJnDDLInput failed");
 			set_needOver(true);
 			break;
 		}
@@ -7502,7 +7550,7 @@ void MainWindow::run_calculate()
 		set_needOver(true);
 		break;
 	}
-
+	URC_LOG_INFO("run_calculate dispatch done. type={}, index={}", which, index);
 	//logOut << GetNowTime() << ", " << "run_calculate Over.\n";
 	return;
 }
