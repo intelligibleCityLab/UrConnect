@@ -11940,13 +11940,6 @@ void MainWindow::createStatusBar()
 	statusBar()->addWidget(m_pConnectProBar);
 	statusBar()->addWidget(locationLabel);
 
-	QVBoxLayout * vctLayout = new QVBoxLayout();
-	vctLayout->addWidget(m_pConnectProBar);
-	vctLayout->addWidget(locationLabel);
-	QVBoxLayout * mainLayout = new QVBoxLayout();
-	mainLayout->addLayout(vctLayout);
-	statusBar()->setLayout(mainLayout);
-
 	statusBar()->showMessage(tr("Ready"));
 	g_info_curr = new QLabel;
 	g_info_curr->setText("      ");
