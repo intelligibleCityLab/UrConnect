@@ -5073,7 +5073,7 @@ void Calculation::Geo_calculateMR(ShapeFileAccessor &fileAccessor)
 }
 
 
-inline std::map<std::string, std::map<int, double>> getMap(ShapeFileAccessor& fileAccessor, int startRoad, std::set<int> validRoads, std::map<int, partInNode> partInLength, std::map<std::string, std::map<int, double>> weight, std::vector<bool> type) {
+inline std::map<std::string, std::map<int, double>> getMap(ShapeFileAccessor& fileAccessor, int startRoad, const std::set<int>& validRoads, const std::map<int, partInNode>& partInLength, const std::map<std::string, std::map<int, double>>& weight, const std::vector<bool>& type) {
 	std::map<std::string, std::map<int, double>> resultMap;
 	struct CompareSecond {
 		bool operator()(const std::pair<int, int>& p1, const std::pair<int, int>& p2) {
@@ -5118,20 +5118,34 @@ inline std::map<std::string, std::map<int, double>> getMap(ShapeFileAccessor& fi
 
 			// ddl
 			if (type[1]) {
-				if (partInLength.count(nowRoad)) {
-					resultMap["ddl"][turnCount] += partInLength[nowRoad].leftLength + partInLength[nowRoad].rightLength;
+				// partInLength and Length only store forward road IDs;
+				// normalize nowRoad (which may be a reverse-direction ID) so that
+				// reverse-direction visits to a boundary road also use its partial length.
+				int forwardRoad = nowRoad % fileAccessor.roadID.size();
+				auto partIt = partInLength.find(forwardRoad);
+				if (partIt != partInLength.end()) {
+					resultMap["ddl"][turnCount] += partIt->second.leftLength + partIt->second.rightLength;
 				}
 				else {
-					resultMap["ddl"][turnCount] += fileAccessor.Length[nowRoad];
+					auto lenIt = fileAccessor.Length.find(forwardRoad);
+					if (lenIt != fileAccessor.Length.end()) {
+						resultMap["ddl"][turnCount] += lenIt->second;
+					}
 				}
 			}
 
 			// wdd
 			if (type[2]) {
+				// weightMap only stores forward road IDs; normalize nowRoad so that
+				// reverse-direction visits to a road also contribute its weight.
+				int forwardRoadForWeight = nowRoad % fileAccessor.roadID.size();
 				for (const auto& weightPair : weight) {
 					const std::string& weightName = weightPair.first;
 					const std::map<int, double>& weightMap = weightPair.second;
-					resultMap[weightName][turnCount] += weightMap.find(nowRoad)->second;
+					auto weightIt = weightMap.find(forwardRoadForWeight);
+					if (weightIt != weightMap.end()) {
+						resultMap[weightName][turnCount] += weightIt->second;
+					}
 				}
 			}
 
@@ -5214,14 +5228,16 @@ void Calculation::calculateDDLbyDij(ShapeFileAccessor& fileAccessor) {
 		}
 		else {
 			for (auto MRLimit : MRLimitSet2) {
-				if (MRLimit == -1) outRoad.insert(fileAccessor.roadID.begin(), fileAccessor.roadID.end());
+				// P0-2/P0-3: reset per-MRLimit state for every iteration (incl. MRLimit == -1)
+				std::set<int>().swap(outRoad);
+				std::set<int>().swap(inRoad);
+				std::map<int, partInNode>().swap(partInLength);
+				std::queue<int> q;
+				std::vector<bool> visited(fileAccessor.roadID.size(), false);
+				if (MRLimit == -1) {
+					outRoad.insert(fileAccessor.roadID.begin(), fileAccessor.roadID.end());
+				}
 				else {
-					std::set<int>().swap(outRoad);
-					std::set<int>().swap(inRoad);
-					/*std::map<int, std::vector<double>>().swap(partIn);*/
-					std::map<int, partInNode>().swap(partInLength);
-					std::queue<int> q;
-					std::vector<bool> visited(fileAccessor.roadID.size());
 					//the startRoad can be totally cover. 
 					if (2 * MRLimit < fileAccessor.Length[startRoad]) {
 						outRoad.insert(startRoad); 
@@ -5276,10 +5292,9 @@ void Calculation::calculateDDLbyDij(ShapeFileAccessor& fileAccessor) {
 					std::map<std::string,std::map<int, double>> map = getMap(fileAccessor, startRoad, outRoad, partInLength, weight, std::vector<bool>(3, true));
 					ddMap = map["dd"];
 					ddlMap = map["ddl"];
-					
-				
-					double weight_turn_sum = 0, weight_sum = 0;
+
 					for (auto it = weight.begin(); it != weight.end(); it++) {
+						double weight_turn_sum = 0, weight_sum = 0;
 						wddMap = map[it->first];
 						for (const auto& pair : wddMap) {
 							weight_turn_sum += pair.first * pair.second;
@@ -5287,7 +5302,7 @@ void Calculation::calculateDDLbyDij(ShapeFileAccessor& fileAccessor) {
 						}
 						WDD_all[MRLimit][it->first][startRoad] = weight_turn_sum / weight_sum;
 					}
-					
+
 				}
 				else {
 					std::vector<bool> type = { true,true,false };
