@@ -307,9 +307,11 @@ jobs:
           cat > release-notes.md <<EOF
           UrConnect ${GITHUB_REF_NAME}
 
-          Fixes directional-distance length weighting (DDL), including reverse-direction and metric-radius boundary handling. Desktop single-thread, multi-thread and CLI runs now share the same DDL implementation.
+          Fixes desktop CSV exports under regional number formats: IDs and numeric values no longer contain thousands separators, and decimals use a point.
 
-          Includes timestamped logs and millisecond-resolution elapsed wall time, safer file-import error handling, and corrected cross-platform build configuration.
+          Preserves distinct fractional-radius results in DBF output, with stable aliases for long field names, and embeds toolbar icons and indicators so they load independently of the working directory.
+
+          Retains the v0.2.1 DDL calculation fixes, timestamped logs, millisecond-resolution elapsed wall time and safer file imports. Adds regression tests for CSV locales, fractional-radius exports and desktop resources.
 
           Windows desktop application:
           - Rebuilt UrConnect.exe with bundled Qt runtime in the Windows x64 ZIP. Extract the complete ZIP before running.

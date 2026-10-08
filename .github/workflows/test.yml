@@ -54,14 +54,14 @@ jobs:
           cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DURCONNECT_BUILD_GUI=OFF -DBOOST_ROOT="${BOOST_ROOT}"
 
       - name: Build
-        run: cmake --build build --config Release --parallel 2 --target urconnect-cli urconnect-test-network urconnect-test-ddl
+        run: cmake --build build --config Release --parallel 2 --target urconnect-cli urconnect-test-network urconnect-test-ddl urconnect-test-csv-export
 
       - name: Test
         run: ctest --test-dir build -C Release --output-on-failure
 
       - name: Build Windows Debug
         if: runner.os == 'Windows'
-        run: cmake --build build --config Debug --parallel 2 --target urconnect-cli urconnect-test-network urconnect-test-ddl
+        run: cmake --build build --config Debug --parallel 2 --target urconnect-cli urconnect-test-network urconnect-test-ddl urconnect-test-csv-export
 
       - name: Test Windows Debug
         if: runner.os == 'Windows'

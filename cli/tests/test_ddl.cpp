@@ -151,6 +151,74 @@ void unequalLengthTest() {
     }
 }
 
+void exportFieldTests(const std::string& path) {
+    DBFHandle dbf = DBFCreate(path.c_str());
+    if (!dbf) throw std::runtime_error("Cannot create export fixture");
+    const int fid = DBFAddField(dbf, "FID", FTInteger, 8, 0);
+    for (int road = 0; road < 4; ++road) DBFWriteIntegerAttribute(dbf, road, fid, road);
+    DBFClose(dbf);
+
+    ShapeFileAccessor accessor;
+    prepare(accessor, {{-0.25, 0, 0, 0}, {0, 0, 0.25, 0},
+                       {0, -0.25, 0, 0}, {0, 0, 0, 0.25}});
+    Calculation calculation;
+    initialize(calculation, accessor,
+               "n,0,0.05,0.25,0.5,10.1,10.9,400,800,1000,0.12345671,0.12345672");
+    calculation.dbfFilePath = path;
+    calculation.isWgt = true;
+    for (int road = 0; road < 4; ++road) {
+        calculation.weight["ones"][road] = 1;
+        calculation.weight["zeros"][road] = 0;
+    }
+    calculation.calculateDDL(accessor);
+    calculation.OutputData(accessor);
+    const auto aliases = calculation.DBFFieldSources;
+
+    dbf = DBFOpen(path.c_str(), "rb");
+    if (!dbf) throw std::runtime_error("Cannot read export fixture");
+    const int count = DBFGetFieldCount(dbf);
+    const int expected = 2 + 4 * static_cast<int>(calculation.MRLimitSet2.size());
+    if (count != expected) throw std::runtime_error("Export fields were lost or duplicated");
+    for (const auto& entry : aliases) {
+        const int field = DBFGetFieldIndex(dbf, entry.first.second.c_str());
+        if (field < 0 || entry.first.second.size() > 10)
+            throw std::runtime_error("Invalid DBF alias");
+        for (const auto& result : calculation.TempModifyData.at(entry.second)) {
+            if (std::fabs(DBFReadDoubleAttribute(dbf, result.first, field) - result.second) > 0.000051)
+                throw std::runtime_error("DBF alias overwrote another parameter result");
+        }
+    }
+    for (const char* name : {"DL45an", "DL45a0", "DL45a0p05", "DL45a0p25", "DL45a0p5",
+                             "DL45a10p1", "DL45a10p9", "DL45a400", "DL45a800", "DL45a1k"}) {
+        if (DBFGetFieldIndex(dbf, name) < 0)
+            throw std::runtime_error(std::string("Missing radius field: ") + name);
+    }
+    near(DBFReadDoubleAttribute(dbf, 0, DBFGetFieldIndex(dbf, "DL45a0p25")), 0.4,
+         "exported partial-length DDL");
+    DBFClose(dbf);
+
+    calculation.OutputData(accessor);
+    dbf = DBFOpen(path.c_str(), "rb");
+    if (!dbf || DBFGetFieldCount(dbf) != count)
+        throw std::runtime_error("Repeated export must reuse fields");
+    DBFClose(dbf);
+
+    Calculation independent;
+    initialize(independent, accessor, "0.12345672");
+    independent.dbfFilePath = path;
+    independent.calculateDDL(accessor);
+    independent.OutputData(accessor);
+    for (const auto& entry : independent.DBFFieldSources) {
+        if (aliases.at(entry.first) != entry.second)
+            throw std::runtime_error("Alias changed in an independent run");
+    }
+    dbf = DBFOpen(path.c_str(), "rb");
+    if (!dbf || DBFGetFieldCount(dbf) != count)
+        throw std::runtime_error("Independent export duplicated an alias");
+    DBFClose(dbf);
+    std::cout << "Fractional radii, long aliases, weights, GUI full names and repeated export passed\n";
+}
+
 void realNetworkTests(const std::string& path) {
     ShapeFileAccessor accessor;
     AttributesData attributes;
@@ -192,6 +260,10 @@ void realNetworkTests(const std::string& path) {
 int main(int argc, char** argv) {
     try {
         if (argc == 3) {
+            if (std::string(argv[1]) == "--export-fields") {
+                exportFieldTests(argv[2]);
+                return 0;
+            }
             ShapeFileAccessor accessor;
             AttributesData attributes;
             const bool missing = std::string(argv[1]) == "--missing-dbf";

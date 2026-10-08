@@ -23,6 +23,7 @@
 #include "dialogs/AboutDlg.h"
 #include "dialogs/settings/settingsdialog.h"
 #include "depthmapX/CSVProcess.h"
+#include "AttributeCsvExport.h"
 #include "Logger.h"
 
 #include <QtGui>
@@ -4687,6 +4688,7 @@ void MainWindow::output_shp_data(MainWindow* temp)
 		}
 
 		out.open(outcsvfilename);
+		out.imbue(std::locale::classic());
 
 		//第一行
 		out << "origin,destination,distance,path\n";
@@ -4758,6 +4760,7 @@ void MainWindow::setProcessPos() {
 
 void MainWindow::outputCsvFiles(Calculation &CA, ShapeFileAccessor &FA) {
 	std::ofstream out;
+	out.imbue(std::locale::classic());
 	if (this->work->ui.radioButton_33->isChecked()) {	//单组子集线
 		std::string filename = "single.csv";
 		std::string filepath = this->fileDir + filename;
@@ -6689,27 +6692,10 @@ void MainWindow::infoRecv(QString sInfo)
 		std::ofstream out;
 		out.open(outFileName);
 
-		int pos = 0;
-		
-		//第一行
-		out << "ID";
-		for (int i = 0; i<int(AttributesSet.size());i++) {
-			out << "," << AttributesSet[i];
-		}
-		out << std::endl;
-
-		for (auto it= this->global_map.Attributes.AttributesDouble["ID"].begin();it != this->global_map.Attributes.AttributesDouble["ID"].end(); it++) {
-			int id = it->second;
-			out << id;
-
-			std::string fieldname;
-			for (int i = 0; i<int(AttributesSet.size()); i++) {
-				fieldname = AttributesSet[i];
-				//out << "," << this->global_map.Attributes.AttributesDouble[fieldname][id];
-				out << "," << tab.getRow(AttributeKey(id)).getValue(fieldname);
-			}
-			out << std::endl;
-		}
+		urconnect::writeAttributeCsv(out, this->global_map.Attributes.AttributesDouble["ID"],
+			AttributesSet, [&tab](int id, const std::string& field) {
+				return tab.getRow(AttributeKey(id)).getValue(field);
+			});
 
 		out.close();
 	}
@@ -6861,6 +6847,7 @@ void MainWindow::saveAllAttributesToCSV() {
 	}
 
 	QTextStream out(&file);
+	out.setLocale(QLocale::c());
 	out.setRealNumberPrecision(16);
 	out.setAutoDetectUnicode(true); // 根据文件内容自动检测编码
 
@@ -6950,27 +6937,10 @@ void MainWindow::saveToCSV() {
 		std::ofstream out;
 		out.open(outFileName);
 
-		int pos = 0;
-
-		//第一行
-		out << "ID";
-		for (int i = 0; i<int(AttributesSet.size()); i++) {
-			out << "," << AttributesSet[i];
-		}
-		out << std::endl;
-
-		for (auto it = this->global_map.Attributes.AttributesDouble["ID"].begin(); it != this->global_map.Attributes.AttributesDouble["ID"].end(); it++) {
-			int id = it->second;
-			out << id;
-
-			std::string fieldname;
-			for (int i = 0; i<int(AttributesSet.size()); i++) {
-				fieldname = AttributesSet[i];
-				//out << "," << this->global_map.Attributes.AttributesDouble[fieldname][id];
-				out << "," << std::fixed<<std::setprecision(4) << tab.getRow(AttributeKey(id)).getValue(fieldname);
-			}
-			out << std::endl;
-		}
+		urconnect::writeAttributeCsv(out, this->global_map.Attributes.AttributesDouble["ID"],
+			AttributesSet, [&tab](int id, const std::string& field) {
+				return tab.getRow(AttributeKey(id)).getValue(field);
+			}, 4);
 
 		out.close();
 	}

@@ -102,4 +102,23 @@
         <file>images/cur/icon-1-5.png</file>
         <file>images/depthmapX.png</file>
     </qresource>
+    <qresource prefix="/ico">
+        <file alias="arrow_down.png">UI/ico/arrow_down.png</file>
+        <file alias="arrow_right.png">UI/ico/arrow_right.png</file>
+        <file alias="checked.png">UI/ico/checked.png</file>
+        <file alias="unchecked.png">UI/ico/unchecked.png</file>
+        <file alias="radiobutton.png">UI/ico/radiobutton.png</file>
+        <file alias="no_radiobutton.png">UI/ico/no_radiobutton.png</file>
+        <file alias="view_icons/b-5-1.png">UI/ico/view_icons/b-5-1.png</file>
+        <file alias="view_icons/b-5-2.png">UI/ico/view_icons/b-5-2.png</file>
+        <file alias="view_icons/b-5-3.png">UI/ico/view_icons/b-5-3.png</file>
+        <file alias="view_icons/b-5-4.png">UI/ico/view_icons/b-5-4.png</file>
+        <file alias="view_icons/b-5-6.png">UI/ico/view_icons/b-5-6.png</file>
+        <file alias="view_icons/b-5-18.png">UI/ico/view_icons/b-5-18.png</file>
+        <file alias="view_icons/scale.png">UI/ico/view_icons/scale.png</file>
+        <file alias="view_icons/select.png">UI/ico/view_icons/select.png</file>
+        <file alias="view_icons/cur00007.png">UI/ico/view_icons/cur00007.png</file>
+        <file alias="view_icons/cur00008.png">UI/ico/view_icons/cur00008.png</file>
+        <file alias="view_icons/cur00009.png">UI/ico/view_icons/cur00009.png</file>
+    </qresource>
 </RCC>

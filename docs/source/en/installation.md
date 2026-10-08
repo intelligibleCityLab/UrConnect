@@ -4,16 +4,16 @@ UrConnect is distributed through GitHub Releases and as source code. The desktop
 
 ## Supported Platforms
 
-The source version is 0.2.1. Release packages include the Windows desktop application and standalone CLI for all three platforms. macOS and Linux packages remain experimental while broader platform validation continues.
+The source version is 0.2.2. Release packages include the Windows desktop application and standalone CLI for all three platforms. macOS and Linux packages remain experimental while broader platform validation continues.
 
 ## Install From A Release
 
-Check the GitHub Releases page for published packages. The v0.2.1 release workflow produces:
+Check the GitHub Releases page for published packages. The v0.2.2 release workflow produces:
 
-- Windows desktop and CLI: `UrConnect-v0.2.1-windows-x64.zip`
+- Windows desktop and CLI: `UrConnect-v0.2.2-windows-x64.zip`
 - Windows CLI: `urconnect-cli-windows-x64.exe`
-- macOS experimental: `UrConnect-v0.2.1-macos-arm64-experimental.tar.gz`
-- Linux experimental: `UrConnect-v0.2.1-linux-x64-experimental.tar.gz`
+- macOS experimental: `UrConnect-v0.2.2-macos-arm64-experimental.tar.gz`
+- Linux experimental: `UrConnect-v0.2.2-linux-x64-experimental.tar.gz`
 
 Extract the complete package before running `UrConnect.exe` on Windows or the `UrConnect` application on macOS or Linux. The Windows ZIP includes Qt runtime libraries. The CLI does not require Qt or a display server.
 

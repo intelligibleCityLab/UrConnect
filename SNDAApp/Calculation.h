@@ -173,6 +173,7 @@ public:
 
 	//为了修改NRA属性栏留出的临时数据，修改完马上清空
 	std::map<std::string, std::map<int, double>> TempModifyData;
+	std::map<std::pair<std::string, std::string>, std::string> DBFFieldSources;
 
 	//path/reach输出
 	std::string net_file_name, geo_file_name;

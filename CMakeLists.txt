@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.15.0)
 if(POLICY CMP0091)
     cmake_policy(SET CMP0091 NEW)
 endif()
-project(UrConnect VERSION 0.2.1)
+project(UrConnect VERSION 0.2.2)
 
 include(CTest)
 option(URCONNECT_BUILD_GUI "Build the Qt desktop application" ON)

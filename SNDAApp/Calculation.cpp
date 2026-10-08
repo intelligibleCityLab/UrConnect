@@ -28,6 +28,7 @@
 #include <limits>
 #include <stdexcept>
 #include <type_traits>
+#include <cstdint>
 #include "CSVProcess.h"
 #include "Logger.h"
 
@@ -59,6 +60,70 @@ static std::string dirOf(const std::string &path)
 {
 	size_t pos = path.find_last_of("/\\");
 	return (pos == std::string::npos) ? std::string() : path.substr(0, pos + 1);
+}
+
+static std::string radiusFieldLabel(double radius)
+{
+    if (radius == -1) return "n";
+    if (radius > 0 && std::fmod(radius, 1000.0) == 0) {
+        std::ostringstream label;
+        label.imbue(std::locale::classic());
+        label << std::fixed << std::setprecision(0) << radius / 1000.0 << 'k';
+        return label.str();
+    }
+
+    // Find a compact round-trip representation without discarding fractional radii.
+    std::string result;
+    for (int precision = 1; precision <= std::numeric_limits<double>::max_digits10; ++precision) {
+        std::ostringstream label;
+        label.imbue(std::locale::classic());
+        label << std::setprecision(precision) << radius;
+        result = label.str();
+        std::istringstream parsed(result);
+        parsed.imbue(std::locale::classic());
+        double value;
+        if (parsed >> value && value == radius) break;
+    }
+    if (std::floor(radius) == radius) {
+        std::ostringstream label;
+        label.imbue(std::locale::classic());
+        label << std::fixed << std::setprecision(0) << radius;
+        result = label.str();
+    }
+    std::replace(result.begin(), result.end(), '.', 'p');
+    std::replace(result.begin(), result.end(), '-', 'm');
+    result.erase(std::remove(result.begin(), result.end(), '+'), result.end());
+    return result;
+}
+
+static std::string shortDbfFieldName(const std::string& name)
+{
+    if (name.size() <= 10) return name;
+    // Stable aliases preserve long parameter names across independent runs.
+    std::uint64_t hash = UINT64_C(14695981039346656037);
+    for (unsigned char ch : name) {
+        hash ^= ch;
+        hash *= UINT64_C(1099511628211);
+    }
+    const char* digits = "0123456789abcdefghijklmnopqrstuvwxyz";
+    std::string suffix(7, '0');
+    for (int i = 6; i >= 0; --i) {
+        suffix[i] = digits[hash % 36];
+        hash /= 36;
+    }
+    return name.substr(0, 2) + "_" + suffix;
+}
+
+static std::string weightedDbfFieldName(const std::string& prefix, const std::string& weight,
+                                      std::set<std::string>& used)
+{
+    const std::string name = prefix + weight;
+    std::string field = prefix.size() >= 10 ? shortDbfFieldName(name) : name.substr(0, 10);
+    for (unsigned int index = 1; !used.insert(field).second; ++index) {
+        const std::string suffix = std::to_string(index);
+        field = name.substr(0, 10 - suffix.size()) + suffix;
+    }
+    return field;
 }
 
 int Calculation::subset_finishedCount;
@@ -3323,6 +3388,7 @@ void Calculation::clearOldData()
 	std::map<int, std::set<int>>().swap(needRoads);
 
 	std::map<std::string, std::map<int, double>>().swap(TempModifyData);
+	DBFFieldSources.clear();
 
 	stepDepthName = "";
 }
@@ -8397,7 +8463,21 @@ void Calculation::modifyDBF(std::map<int, double> &Result, std::string outPath, 
 		return;
 
 	if (int(Result.size()) == 0)
+	{
+		DBFClose(hDBF);
 		return;
+	}
+
+	fieldName = shortDbfFieldName(fieldName);
+	std::string canonicalName = fieldName;
+	std::transform(canonicalName.begin(), canonicalName.end(), canonicalName.begin(),
+		[](unsigned char ch) { return ch >= 'a' && ch <= 'z' ? ch - 'a' + 'A' : ch; });
+	const auto key = std::make_pair(outPath, canonicalName);
+	const auto inserted = DBFFieldSources.emplace(key, fullName);
+	if (!inserted.second && inserted.first->second != fullName) {
+		DBFClose(hDBF);
+		throw std::runtime_error("Conflicting DBF output field: " + fieldName);
+	}
 
 	TempModifyData[fullName] = Result;
 
@@ -8405,10 +8485,6 @@ void Calculation::modifyDBF(std::map<int, double> &Result, std::string outPath, 
 	int fieldIndex = DBFGetFieldIndex(hDBF, fieldName.c_str());
 	if (fieldIndex == -1)
 	{
-		//检查field名称是否超过10个字符，若超出，则斩除超出部分的字符
-		if (fieldName.length() > 10)
-			fieldName = fieldName.substr(0, 10);
-
 		//添加表列
 		if (fieldName == "PathCount")
 			DBFAddField(hDBF, fieldName.c_str(), FTInteger, 20, 0);
@@ -8445,17 +8521,7 @@ void Calculation::OutputData(ShapeFileAccessor &fileAccessor)
 		for (auto iter = MRLimitSet.begin(); iter != MRLimitSet.end(); iter++)
 		{
 			double MRLimit = *iter;
-			if (MRLimit == -1)
-				str1 = "n";
-			else
-			{
-				str1 = std::to_string(int(MRLimit));
-				if (int(MRLimit) % 1000 == 0)
-				{
-					int s = int(MRLimit) / 1000;
-					str1 = std::to_string(s) + "k";
-				}
-			}
+			str1 = radiusFieldLabel(MRLimit);
 
 			//输出meanMD
 			fieldName2 = "mMD" + str1;
@@ -8468,16 +8534,7 @@ void Calculation::OutputData(ShapeFileAccessor &fileAccessor)
 		for (auto iter = MRLimitSet.begin(); iter != MRLimitSet.end(); iter++)
 		{
 			double MRLimit = *iter;
-			if (MRLimit == -1)
-				str1 = "n";
-			else{
-				str1 = std::to_string(int(MRLimit));
-				if (int(MRLimit) % 1000 == 0)
-				{
-					int s = int(MRLimit) / 1000;
-					str1 = std::to_string(s) + "k";
-				}
-			}
+			str1 = radiusFieldLabel(MRLimit);
 			//输出MR
 			fieldName = "R" + str1;
 			modifyDBF(MR_all[MRLimit], dbfFilePath, fieldName);
@@ -8489,15 +8546,7 @@ void Calculation::OutputData(ShapeFileAccessor &fileAccessor)
 					fieldName = "R" + str1 + "W" + wgtstr;
 
 					//DBF裁剪了字段，需要判断重复
-					std::string subfieldName = "R" + str1 + "W";
-					if (subfieldName.size() < 10) subfieldName += wgtstr.substr(0, 10 - subfieldName.size());
-					int pos = 1;
-					while (fieldnames.count(subfieldName)) {
-						subfieldName = "R" + str1 + "W";
-						if (subfieldName.size() < 10) subfieldName += wgtstr.substr(0, 9 - subfieldName.size()) + std::to_string(pos);
-						++pos;
-					}
-					fieldnames.insert(subfieldName);
+					std::string subfieldName = weightedDbfFieldName("R" + str1 + "W", wgtstr, fieldnames);
 
 
 					modifyDBF(wgtMR_all[MRLimit][wgtstr], dbfFilePath, subfieldName,fieldName);
@@ -8541,15 +8590,7 @@ void Calculation::OutputData(ShapeFileAccessor &fileAccessor)
 						fieldName = "D" + txAngle + "W" + wgtstr;
 
 						//DBF裁剪了字段，需要判断重复
-						std::string subfieldName = "D" + txAngle ;
-						if (subfieldName.size() < 10) subfieldName += wgtstr.substr(0, 10 - subfieldName.size());
-						int pos = 1;
-						while (fieldnames.count(subfieldName)) {
-							subfieldName = "D" + txAngle;
-							if (subfieldName.size() < 10) subfieldName += wgtstr.substr(0, 9 - subfieldName.size()) + std::to_string(pos);
-							++pos;
-						}
-						fieldnames.insert(subfieldName);
+						std::string subfieldName = weightedDbfFieldName("D" + txAngle, wgtstr, fieldnames);
 						
 						modifyDBF(WDD_all[MRLimit][wgtstr], dbfFilePath, subfieldName, fieldName);
 						//modifyCSV(WDD_all[MRLimit][wgtstr], csvFilePath, fieldName);
@@ -8563,17 +8604,7 @@ void Calculation::OutputData(ShapeFileAccessor &fileAccessor)
 				double DRLimit = *it1;
 				double MRLimit = -1;
 
-				if (MRLimit == -1)
-					str1 = "n";
-				else
-				{
-					str1 = std::to_string(int(MRLimit));
-					if (int(MRLimit) % 1000 == 0)
-					{
-						int s = int(MRLimit) / 1000;
-						str1 = std::to_string(s) + "k";
-					}
-				}
+				str1 = radiusFieldLabel(MRLimit);
 
 				if (DRLimit == -1)
 					str2 = "n";
@@ -8599,15 +8630,7 @@ void Calculation::OutputData(ShapeFileAccessor &fileAccessor)
 						fieldName = "R" + str2 + "d" + txAngle + "W" + wgtstr;
 
 						//DBF裁剪了字段，需要判断重复
-						std::string subfieldName = "R" + str2 + "d" + txAngle + "W";
-						if (subfieldName.size() < 10) subfieldName += wgtstr.substr(0, 10 - subfieldName.size());
-						int pos = 1;
-						while (fieldnames.count(subfieldName)) {
-							subfieldName = "R" + str2 + "d" + txAngle + "W";
-							if (subfieldName.size() < 10) subfieldName += wgtstr.substr(0, 9 - subfieldName.size()) + std::to_string(pos);
-							++pos;
-						}
-						fieldnames.insert(subfieldName);
+						std::string subfieldName = weightedDbfFieldName("R" + str2 + "d" + txAngle + "W", wgtstr, fieldnames);
 						
 						modifyDBF(wgtDR_all[std::pair<double, double>(DRLimit, MRLimit)][wgtstr], dbfFilePath, subfieldName, fieldName);
 						//modifyCSV(wgtDR_all[std::pair<double, double>(DRLimit, MRLimit)][wgtstr], csvFilePath, fieldName);
@@ -8625,17 +8648,7 @@ void Calculation::OutputData(ShapeFileAccessor &fileAccessor)
 				double MRLimit = *it;
 
 
-				if (MRLimit == -1)
-					str1 = "n";
-				else
-				{
-					str1 = std::to_string(int(MRLimit));
-					if (int(MRLimit) % 1000 == 0)
-					{
-						int s = int(MRLimit) / 1000;
-						str1 = std::to_string(s) + "k";
-					}
-				}
+				str1 = radiusFieldLabel(MRLimit);
 
 				if (isDDL) {
 					fieldName = "D" + txAngle + str1;
@@ -8651,15 +8664,7 @@ void Calculation::OutputData(ShapeFileAccessor &fileAccessor)
 							std::string wgtstr = wgt_it->first;
 							fieldName = "D" + txAngle + str1 + "W" +wgtstr;
 							//DBF裁剪了字段，需要判断重复
-							std::string subfieldName = "R" + str2 + "d" + str1 ;
-							if (subfieldName.size() < 10) subfieldName += wgtstr.substr(0, 10 - subfieldName.size());
-							int pos = 1;
-							while (fieldnames.count(subfieldName)) {
-								subfieldName = "R" + str2 + "d" + str1;
-								if (subfieldName.size() < 10) subfieldName += wgtstr.substr(0, 9 - subfieldName.size()) + std::to_string(pos);
-								++pos;
-							}
-							fieldnames.insert(subfieldName);
+							std::string subfieldName = weightedDbfFieldName("R" + str2 + "d" + str1, wgtstr, fieldnames);
 							
 							modifyDBF(WDD_all[MRLimit][wgtstr], dbfFilePath, subfieldName, fieldName);
 							//modifyCSV(WDD_all[MRLimit][wgtstr], csvFilePath, fieldName);
@@ -8677,17 +8682,7 @@ void Calculation::OutputData(ShapeFileAccessor &fileAccessor)
 						double DRLimit = *it1;
 						double MRLimit = *it2;
 
-						if (MRLimit == -1)
-							str1 = "n";
-						else
-						{
-							str1 = std::to_string(int(MRLimit));
-							if (int(MRLimit) % 1000 == 0)
-							{
-								int s = int(MRLimit) / 1000;
-								str1 = std::to_string(s) + "k";
-							}
-						}
+						str1 = radiusFieldLabel(MRLimit);
 
 						if (DRLimit == -1)
 							str2 = "n";
@@ -8712,15 +8707,7 @@ void Calculation::OutputData(ShapeFileAccessor &fileAccessor)
 								std::string wgtstr = wgt_it->first;
 								fieldName = "R" + str2 + "d" + txAngle + str1 + "W" + wgtstr;
 
-								std::string subfieldName="R" + str2 + "d" + txAngle + str1 + "W";
-								if (subfieldName.size() < 10) subfieldName += wgtstr.substr(0, 10 - subfieldName.size());
-								int pos = 1;
-								while (fieldnames.count(subfieldName)) {
-									subfieldName = "R" + str2 + "d" + txAngle + str1 + "W";
-									if (subfieldName.size() < 10) subfieldName += wgtstr.substr(0, 9 - subfieldName.size()) + std::to_string(pos);
-									++pos;
-								}
-								fieldnames.insert(subfieldName);
+								std::string subfieldName = weightedDbfFieldName("R" + str2 + "d" + txAngle + str1 + "W", wgtstr, fieldnames);
 								modifyDBF(wgtDR_all[std::pair<double, double>(DRLimit, MRLimit)][wgtstr], dbfFilePath, subfieldName, fieldName);
 								//modifyCSV(wgtDR_all[std::pair<double, double>(DRLimit, MRLimit)][wgtstr], csvFilePath, fieldName);
 							}
@@ -8754,15 +8741,7 @@ void Calculation::OutputData(ShapeFileAccessor &fileAccessor)
 					std::string wgtstr = wgt_it->first;
 					fieldName = "R" + str3 + "j" + txJD + "W" + wgtstr;
 
-					std::string subfieldName = "R" + str3 + "j" + txJD + "W";
-					if (fieldName.size() < 10) subfieldName += wgtstr.substr(0, 10 - subfieldName.size());
-					int pos = 1;
-					while (fieldnames.count(subfieldName)) {
-						subfieldName = "R" + str3 + "j" + txJD +"W";
-						if (subfieldName.size() < 10) subfieldName += wgtstr.substr(0, 9 - subfieldName.size()) + std::to_string(pos);
-						++pos;
-					}
-					fieldnames.insert(subfieldName);
+					std::string subfieldName = weightedDbfFieldName("R" + str3 + "j" + txJD + "W", wgtstr, fieldnames);
 					modifyDBF(wgtJncR_all[Jnc_maxNum][wgtstr], dbfFilePath, subfieldName, fieldName);
 					//modifyCSV(wgtJncR_all[Jnc_maxNum][wgtstr], csvFilePath, fieldName);
 				}
@@ -8792,15 +8771,7 @@ void Calculation::OutputData(ShapeFileAccessor &fileAccessor)
 					std::string wgtstr = wgt_it->first;
 					fieldName = "R" + str1 + "W" + wgtstr;
 
-					std::string subfieldName = "R" + str1 + "W";
-					if (subfieldName.size() < 10) subfieldName += wgtstr.substr(0, 10 - subfieldName.size());
-					int pos = 1;
-					while (fieldnames.count(subfieldName)) {
-						subfieldName = "R" + str1 + "W";
-						if (subfieldName.size() < 10) subfieldName += wgtstr.substr(0, 9 - subfieldName.size()) + std::to_string(pos);
-						++pos;
-					}
-					fieldnames.insert(subfieldName);
+					std::string subfieldName = weightedDbfFieldName("R" + str1 + "W", wgtstr, fieldnames);
 					modifyDBF(wgtDR_all[std::pair<double, double>(-1, MRLimit)][wgtstr], dbfFilePath, subfieldName, fieldName);
 					//modifyCSV(wgtDR_all[std::pair<double, double>(-1, MRLimit)][wgtstr], csvFilePath, fieldName);
 				}
@@ -8811,17 +8782,7 @@ void Calculation::OutputData(ShapeFileAccessor &fileAccessor)
 		{
 			double MRLimit = *it2;
 
-			if (MRLimit == -1)
-				str1 = "n";
-			else
-			{
-				str1 = std::to_string(int(MRLimit));
-				if (int(MRLimit) % 1000 == 0)
-				{
-					int s = int(MRLimit) / 1000;
-					str1 = std::to_string(s) + "k";
-				}
-			}
+			str1 = radiusFieldLabel(MRLimit);
 
 			std::string txJD = std::to_string(int(Jnc_t_limit_JncR)) + "x";
 
@@ -8841,15 +8802,7 @@ void Calculation::OutputData(ShapeFileAccessor &fileAccessor)
 					std::string wgtstr = wgt_it->first;
 					fieldName = "R" + str1 + "W" + wgtstr;
 
-					std::string subfieldName = "R" + str1 + "W";
-					if (subfieldName.size() < 10) subfieldName += wgtstr.substr(0, 10 - subfieldName.size());
-					int pos = 1;
-					while (fieldnames.count(subfieldName)) {
-						subfieldName = "R" + str1 + "W";
-						if (subfieldName.size() < 10) subfieldName += wgtstr.substr(0, 9 - subfieldName.size()) + std::to_string(pos);
-						++pos;
-					}
-					fieldnames.insert(subfieldName);
+					std::string subfieldName = weightedDbfFieldName("R" + str1 + "W", wgtstr, fieldnames);
 					modifyDBF(wgtDR_all[std::pair<double, double>(-1, MRLimit)][wgtstr], dbfFilePath, subfieldName, fieldName);
 					//modifyCSV(wgtDR_all[std::pair<double, double>(-1, MRLimit)][wgtstr], csvFilePath, fieldName);
 				}
@@ -8883,15 +8836,7 @@ void Calculation::OutputData(ShapeFileAccessor &fileAccessor)
 					std::string wgtstr = wgt_it->first;
 					fieldName = "D" + str3 + "j" + txJD + "W" + wgtstr;
 
-					std::string subfieldName = "D" + str3 + "j" + txJD + "W";
-					if (subfieldName.size() < 10) subfieldName += wgtstr.substr(0, 10 - subfieldName.size());
-					int pos = 1;
-					while (fieldnames.count(subfieldName)) {
-						subfieldName = "D" + str3 + "j" + txJD + "W";
-						if (subfieldName.size() < 10) subfieldName += wgtstr.substr(0, 9 - subfieldName.size()) + std::to_string(pos);
-						++pos;
-					}
-					fieldnames.insert(subfieldName);
+					std::string subfieldName = weightedDbfFieldName("D" + str3 + "j" + txJD + "W", wgtstr, fieldnames);
 					modifyDBF(JncWDD_all[Jnc_maxNum][wgtstr], dbfFilePath, subfieldName, fieldName);
 					//modifyCSV(JncWDD_all[Jnc_maxNum][wgtstr], csvFilePath, fieldName);
 				}

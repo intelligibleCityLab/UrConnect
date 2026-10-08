@@ -45,7 +45,7 @@ UrConnect 是一个面向线段化街道网络的桌面分析工具。它将拓�
 
 ## 安装与构建
 
-当前源码版本为 0.2.1。请从 [GitHub Releases](https://github.com/intelligibleCityLab/UrConnect/releases) 查看已发布的安装包。Windows ZIP 包含重新构建的桌面程序和 Qt 运行库，并提供独立 Windows CLI；macOS 和 Linux 包仍标为 experimental，跨平台验证继续进行。
+当前源码版本为 0.2.2。请从 [GitHub Releases](https://github.com/intelligibleCityLab/UrConnect/releases) 查看已发布的安装包。Windows ZIP 包含重新构建的桌面程序和 Qt 运行库，并提供独立 Windows CLI；macOS 和 Linux 包仍标为 experimental，跨平台验证继续进行。
 
 Windows 桌面程序使用 `UrConnect.exe`；各平台同时提供无需 Qt 或图形界面的独立命令行程序。
 

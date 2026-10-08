@@ -72,5 +72,8 @@ Notes:
 
 - `mMD` means mean metric distance.
 - `DL` means directional distance per segment length.
+- CSV numeric exports use a decimal point and no thousands separators, regardless of the desktop's regional settings. Selected-attribute exports retain four decimal places.
 - Junction Distance does not use the `Compute Junctions` option.
 - When options are enabled, Shapefile fields may omit angle-threshold detail to fit the DBF field limit.
+- Fractional metric radii retain their decimal part using `p`: radius `0.25` at angle `45` produces `D45a0p25` and `DL45a0p25`. Integer-radius names remain unchanged.
+- Long unshortened output names use stable 10-character aliases rather than simple truncation. The desktop attribute table retains the full output names during the current analysis session. Weighted fields keep their existing compact naming where it fits.

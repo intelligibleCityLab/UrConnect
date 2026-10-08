@@ -244,3 +244,17 @@ set_target_properties(${APP_NAME} PROPERTIES
     CXX_STANDARD 11
     CXX_STANDARD_REQUIRED ON
 )
+
+if(BUILD_TESTING)
+    add_executable(urconnect-test-gui-resources
+        tests/test_gui_resources.cpp
+        qcolordialogbutton.cpp
+        ${DM_RSRC}
+    )
+    target_link_libraries(urconnect-test-gui-resources Qt5::Widgets)
+    add_test(NAME gui_resources COMMAND urconnect-test-gui-resources)
+    set_tests_properties(gui_resources PROPERTIES
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+        TIMEOUT 30
+    )
+endif()

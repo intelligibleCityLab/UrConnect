@@ -49,9 +49,14 @@ target_link_libraries(urconnect-cli PRIVATE urconnect-cli-engine)
 target_compile_definitions(urconnect-cli-engine PUBLIC NOMINMAX)
 
 if(BUILD_TESTING)
+    add_executable(urconnect-test-csv-export tests/test_csv_export.cpp)
+    add_test(NAME csv_export_locale COMMAND urconnect-test-csv-export)
     add_executable(urconnect-test-ddl tests/test_ddl.cpp)
     target_link_libraries(urconnect-test-ddl PRIVATE urconnect-cli-engine)
     add_test(NAME ddl_regression COMMAND urconnect-test-ddl)
+    add_test(NAME output_fields
+        COMMAND urconnect-test-ddl --export-fields ${CMAKE_CURRENT_BINARY_DIR}/output-fields.dbf)
+    set_tests_properties(output_fields PROPERTIES TIMEOUT 30)
     add_executable(urconnect-test-network tests/test_network.cpp)
     target_link_libraries(urconnect-test-network PRIVATE urconnect-cli-shp)
     add_test(NAME importer_errors
@@ -103,7 +108,7 @@ endif()
 if(MSVC AND POLICY CMP0091)
     set(cli_runtime_targets urconnect-cli urconnect-cli-engine urconnect-cli-shp)
     if(BUILD_TESTING)
-        list(APPEND cli_runtime_targets urconnect-test-network urconnect-test-ddl)
+        list(APPEND cli_runtime_targets urconnect-test-network urconnect-test-ddl urconnect-test-csv-export)
     endif()
     set_target_properties(${cli_runtime_targets} PROPERTIES
         MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>"

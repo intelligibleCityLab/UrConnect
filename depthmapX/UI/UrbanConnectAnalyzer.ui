@@ -132,9 +132,12 @@
             <property name="text">
              <string/>
             </property>
+            <property name="toolTip">
+             <string>Select</string>
+            </property>
             <property name="icon">
-             <iconset>
-              <normaloff>ico/view_icons/b-5-1.png</normaloff>ico/view_icons/b-5-1.png</iconset>
+             <iconset resource="../resource.qrc">
+              <normaloff>:/ico/view_icons/b-5-1.png</normaloff>:/ico/view_icons/b-5-1.png</iconset>
             </property>
             <property name="iconSize">
              <size>
@@ -167,9 +170,12 @@
             <property name="text">
              <string/>
             </property>
+            <property name="toolTip">
+             <string>Pan</string>
+            </property>
             <property name="icon">
-             <iconset>
-              <normaloff>ico/view_icons/b-5-2.png</normaloff>ico/view_icons/b-5-2.png</iconset>
+             <iconset resource="../resource.qrc">
+              <normaloff>:/ico/view_icons/b-5-2.png</normaloff>:/ico/view_icons/b-5-2.png</iconset>
             </property>
             <property name="iconSize">
              <size>
@@ -202,9 +208,12 @@
             <property name="text">
              <string/>
             </property>
+            <property name="toolTip">
+             <string>Zoom In</string>
+            </property>
             <property name="icon">
-             <iconset>
-              <normaloff>ico/view_icons/b-5-3.png</normaloff>ico/view_icons/b-5-3.png</iconset>
+             <iconset resource="../resource.qrc">
+              <normaloff>:/ico/view_icons/b-5-3.png</normaloff>:/ico/view_icons/b-5-3.png</iconset>
             </property>
             <property name="iconSize">
              <size>
@@ -237,9 +246,12 @@
             <property name="text">
              <string/>
             </property>
+            <property name="toolTip">
+             <string>Zoom Out</string>
+            </property>
             <property name="icon">
-             <iconset>
-              <normaloff>ico/view_icons/b-5-4.png</normaloff>ico/view_icons/b-5-4.png</iconset>
+             <iconset resource="../resource.qrc">
+              <normaloff>:/ico/view_icons/b-5-4.png</normaloff>:/ico/view_icons/b-5-4.png</iconset>
             </property>
             <property name="iconSize">
              <size>
@@ -266,9 +278,12 @@
             <property name="text">
              <string/>
             </property>
+            <property name="toolTip">
+             <string>Fit Network</string>
+            </property>
             <property name="icon">
-             <iconset>
-              <normaloff>ico/view_icons/b-5-6.png</normaloff>ico/view_icons/b-5-6.png</iconset>
+             <iconset resource="../resource.qrc">
+              <normaloff>:/ico/view_icons/b-5-6.png</normaloff>:/ico/view_icons/b-5-6.png</iconset>
             </property>
             <property name="checkable">
              <bool>false</bool>
@@ -295,9 +310,12 @@
             <property name="text">
              <string/>
             </property>
+            <property name="toolTip">
+             <string>Invert Background</string>
+            </property>
             <property name="icon">
-             <iconset>
-              <normaloff>ico/view_icons/b-5-18.png</normaloff>ico/view_icons/b-5-18.png</iconset>
+             <iconset resource="../resource.qrc">
+              <normaloff>:/ico/view_icons/b-5-18.png</normaloff>:/ico/view_icons/b-5-18.png</iconset>
             </property>
             <property name="iconSize">
              <size>
@@ -327,9 +345,12 @@
             <property name="text">
              <string/>
             </property>
+            <property name="toolTip">
+             <string>Measure Distance</string>
+            </property>
             <property name="icon">
-             <iconset>
-              <normaloff>ico/view_icons/scale.png</normaloff>ico/view_icons/scale.png</iconset>
+             <iconset resource="../resource.qrc">
+              <normaloff>:/ico/view_icons/scale.png</normaloff>:/ico/view_icons/scale.png</iconset>
             </property>
             <property name="iconSize">
              <size>
@@ -356,9 +377,12 @@
             <property name="text">
              <string/>
             </property>
+            <property name="toolTip">
+             <string>Select by Attribute</string>
+            </property>
             <property name="icon">
-             <iconset>
-              <normaloff>ico/view_icons/select.png</normaloff>ico/view_icons/select.png</iconset>
+             <iconset resource="../resource.qrc">
+              <normaloff>:/ico/view_icons/select.png</normaloff>:/ico/view_icons/select.png</iconset>
             </property>
             <property name="iconSize">
              <size>
@@ -823,11 +847,11 @@ QRadioButton:pressed
  }
 
 QRadioButton::indicator::unchecked {
-    image: url(ico/arrow_right.png);
+    image: url(:/ico/arrow_right.png);
 }
 
 QRadioButton::indicator::checked {
-    image: url(ico/arrow_down.png);
+    image: url(:/ico/arrow_down.png);
 }</string>
                </property>
                <property name="text">
@@ -2296,11 +2320,11 @@ QRadioButton:pressed
  }
 
 QRadioButton::indicator::unchecked {
-    image: url(ico/arrow_right.png);
+    image: url(:/ico/arrow_right.png);
 }
 
 QRadioButton::indicator::checked {
-    image: url(ico/arrow_down.png);
+    image: url(:/ico/arrow_down.png);
 }</string>
                </property>
                <property name="text">
@@ -3789,11 +3813,11 @@ QRadioButton:pressed
  }
 
 QRadioButton::indicator::unchecked {
-    image: url(ico/arrow_right.png);
+    image: url(:/ico/arrow_right.png);
 }
 
 QRadioButton::indicator::checked {
-    image: url(ico/arrow_down.png);
+    image: url(:/ico/arrow_down.png);
 }</string>
                </property>
                <property name="text">
@@ -4853,11 +4877,11 @@ QRadioButton:pressed
 
 
 QRadioButton::indicator::unchecked {
-    image: url(ico/arrow_right.png);
+    image: url(:/ico/arrow_right.png);
 }
 
 QRadioButton::indicator::checked {
-    image: url(ico/arrow_down.png);
+    image: url(:/ico/arrow_down.png);
 }</string>
                </property>
                <property name="text">
@@ -6187,11 +6211,11 @@ padding-left:9px;
 
 
 QRadioButton::indicator::unchecked {
-    image: url(ico/unchecked.png);
+    image: url(:/ico/unchecked.png);
 }
 
 QRadioButton::indicator::checked {
-    image: url(ico/checked.png);
+    image: url(:/ico/checked.png);
 }
 </string>
                   </property>
@@ -6303,11 +6327,11 @@ padding-left:9px;
 
 
 QRadioButton::indicator::unchecked {
-    image: url(ico/unchecked.png);
+    image: url(:/ico/unchecked.png);
 }
 
 QRadioButton::indicator::checked {
-    image: url(ico/checked.png);
+    image: url(:/ico/checked.png);
 }
 </string>
                   </property>
@@ -7655,11 +7679,11 @@ QRadioButton:pressed
 
 
 QRadioButton::indicator::unchecked {
-    image: url(ico/arrow_right.png);
+    image: url(:/ico/arrow_right.png);
 }
 
 QRadioButton::indicator::checked {
-    image: url(ico/arrow_down.png);
+    image: url(:/ico/arrow_down.png);
 }
 </string>
                   </property>
@@ -7885,11 +7909,11 @@ QRadioButton:pressed
 
 
 QRadioButton::indicator::unchecked {
-    image: url(ico/arrow_right.png);
+    image: url(:/ico/arrow_right.png);
 }
 
 QRadioButton::indicator::checked {
-    image: url(ico/arrow_down.png);
+    image: url(:/ico/arrow_down.png);
 }</string>
                      </property>
                      <property name="text">
@@ -8244,11 +8268,11 @@ QRadioButton:pressed
 
 
 QRadioButton::indicator::unchecked {
-    image: url(ico/arrow_right.png);
+    image: url(:/ico/arrow_right.png);
 }
 
 QRadioButton::indicator::checked {
-    image: url(ico/arrow_down.png);
+    image: url(:/ico/arrow_down.png);
 }
 </string>
                   </property>

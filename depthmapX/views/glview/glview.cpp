@@ -925,13 +925,13 @@ void GLView::SetCursor() {
 		m_cursor = QCursor(Qt::ArrowCursor);
 		break;
 	case MOUSE_MODE_PAN:
-		m_cursor = QCursor(QPixmap("ico/view_icons/cur00007.png"));
+		m_cursor = QCursor(QPixmap(":/ico/view_icons/cur00007.png"));
 		break;
 	case MOUSE_MODE_ZOOM_IN:
-		m_cursor = QCursor(QPixmap("ico/view_icons/cur00008.png"));
+		m_cursor = QCursor(QPixmap(":/ico/view_icons/cur00008.png"));
 		break;
 	case MOUSE_MODE_ZOOM_OUT:
-		m_cursor = QCursor(QPixmap("ico/view_icons/cur00009.png"));
+		m_cursor = QCursor(QPixmap(":/ico/view_icons/cur00009.png"));
 		break;
 	default:
 		m_cursor = QCursor(Qt::ArrowCursor);

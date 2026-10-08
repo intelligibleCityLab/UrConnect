@@ -47,7 +47,7 @@ The documentation is built as Sphinx HTML pages with a left navigation, page tab
 
 ## Installation
 
-The source version is 0.2.1. Check [GitHub Releases](https://github.com/intelligibleCityLab/UrConnect/releases) for published packages. The Windows ZIP contains a rebuilt desktop application and its Qt runtime. macOS and Linux packages remain experimental while cross-platform validation continues.
+The source version is 0.2.2. Check [GitHub Releases](https://github.com/intelligibleCityLab/UrConnect/releases) for published packages. The Windows ZIP contains a rebuilt desktop application and its Qt runtime. macOS and Linux packages remain experimental while cross-platform validation continues.
 
 Build from source:
 
@@ -95,7 +95,7 @@ cmake -S . -B build -DURCONNECT_BUILD_GUI=OFF -DBOOST_ROOT=/path/to/boost
 cmake --build build --config Release --target urconnect-cli
 ```
 
-The v0.2.1 release packages the desktop application and `urconnect-cli` for Windows, macOS and Linux, with a separate `urconnect-cli-windows-x64.exe` asset for Windows. The CLI statically links the bundled Shapelib implementation and does not require Qt or a display server.
+The v0.2.2 release packages the desktop application and `urconnect-cli` for Windows, macOS and Linux, with a separate `urconnect-cli-windows-x64.exe` asset for Windows. The CLI statically links the bundled Shapelib implementation and does not require Qt or a display server.
 
 ## Tests
 

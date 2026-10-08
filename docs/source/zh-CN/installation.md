@@ -4,16 +4,16 @@ UrConnect 通过 GitHub Releases 和源代码分发。桌面程序使用 C++、Q
 
 ## 平台状态
 
-当前源码版本为 0.2.1。发布包包含重新构建的 Windows 桌面程序和三个平台的独立 CLI。macOS 和 Linux 包仍标为 experimental，更广泛的平台验证继续进行。
+当前源码版本为 0.2.2。发布包包含重新构建的 Windows 桌面程序和三个平台的独立 CLI。macOS 和 Linux 包仍标为 experimental，更广泛的平台验证继续进行。
 
 ## 从发布包安装
 
-请从 GitHub Releases 页面查看已发布的安装包。v0.2.1 的发布流程生成：
+请从 GitHub Releases 页面查看已发布的安装包。v0.2.2 的发布流程生成：
 
-- Windows 桌面程序和 CLI：`UrConnect-v0.2.1-windows-x64.zip`
+- Windows 桌面程序和 CLI：`UrConnect-v0.2.2-windows-x64.zip`
 - Windows CLI：`urconnect-cli-windows-x64.exe`
-- macOS experimental: `UrConnect-v0.2.1-macos-arm64-experimental.tar.gz`
-- Linux experimental: `UrConnect-v0.2.1-linux-x64-experimental.tar.gz`
+- macOS experimental: `UrConnect-v0.2.2-macos-arm64-experimental.tar.gz`
+- Linux experimental: `UrConnect-v0.2.2-linux-x64-experimental.tar.gz`
 
 请完整解压发布包后运行 Windows 的 `UrConnect.exe`，或 macOS/Linux 的 `UrConnect` 应用。Windows ZIP 已包含 Qt 运行库。CLI 不需要 Qt 或图形界面。
 

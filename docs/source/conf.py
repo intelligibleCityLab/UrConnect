@@ -7,7 +7,7 @@ ROOT = Path(__file__).resolve().parents[2]
 project = "UrConnect"
 author = "Intelligible City Lab"
 copyright = "2026, Intelligible City Lab"
-release = "0.2.1"
+release = "0.2.2"
 
 extensions = [
     "myst_parser",
