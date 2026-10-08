@@ -249,6 +249,7 @@ if(BUILD_TESTING)
     add_executable(urconnect-test-gui-resources
         tests/test_gui_resources.cpp
         qcolordialogbutton.cpp
+        ${CMAKE_CURRENT_BINARY_DIR}/ui_UrbanConnectAnalyzer.h
         ${DM_RSRC}
     )
     target_link_libraries(urconnect-test-gui-resources Qt5::Widgets)
