@@ -117,7 +117,7 @@ jobs:
         run: |
           cmake --build build --config Release --parallel 2
 
-      - name: Test CLI
+      - name: Test analysis and desktop resources
         run: ctest --test-dir build -C Release --output-on-failure
 
       - name: Package Windows desktop and CLI
@@ -250,9 +250,14 @@ jobs:
             exit 1
           fi
 
-      - name: Add license and notices
+      - name: Add examples, validation reports, license and notices
         shell: bash
         run: |
+          cp -R examples package/
+          mkdir -p package/validation
+          cp build/cli/reach-validation-Release.csv package/validation/
+          cp build/cli/reach-validation-Release.md package/validation/
+          cp cli/tests/REACH_VALIDATION.md package/validation/
           cp LICENSE package/
           cp THIRD_PARTY_NOTICES.md package/
           cp -R licenses package/
@@ -264,6 +269,9 @@ jobs:
           Status: ${{ matrix.release-status }}
 
           This package contains the rebuilt desktop application and standalone CLI. macOS and Linux packages remain experimental. Extract the whole package before running the desktop application.
+
+          Example street networks: examples/apt/ and examples/hangzhou/.
+          Reach correctness: validation/ contains hand-derived reference values and this build's per-segment CSV results and maximum-error summary.
           EOF
           if [ "$RUNNER_OS" = "Linux" ]; then
             printf '\nLinux binaries are built and tested on Ubuntu 24.04 x64. The desktop app requires system Qt 5, OpenGL and GLU libraries; the CLI requires only the standard C/C++ runtime, not Qt or Shapelib DLLs.\n' >> package/README.txt
@@ -307,11 +315,16 @@ jobs:
           cat > release-notes.md <<EOF
           UrConnect ${GITHUB_REF_NAME}
 
-          Fixes desktop CSV exports under regional number formats: IDs and numeric values no longer contain thousands separators, and decimals use a point.
+          Corrects three reach-calculation boundary cases in the engine shared by the desktop application and CLI:
+          - Unlimited metric reach now includes only the source's connected component.
+          - Source-only directional-metric reach is capped at the actual source-segment length.
+          - Directional-metric reach retains partial lengths when the metric radius touches every segment without fully covering the network.
 
-          Preserves distinct fractional-radius results in DBF output, with stable aliases for long field names, and embeds toolbar icons and indicators so they load independently of the working directory.
+          Adds automated numerical validation of metric, directional, junction, and directional-metric reach against hand-derived values on two synthetic networks. Each platform's build checks 702 source-segment results across 156 parameter/orientation cases, with a maximum absolute error tolerance of 1e-9 m. This is synthetic-network validation, not a comparison with an external reference implementation.
 
-          Retains the v0.2.1 DDL calculation fixes, timestamped logs, millisecond-resolution elapsed wall time and safer file imports. Adds regression tests for CSV locales, fractional-radius exports and desktop resources.
+          Every desktop package includes the Apt and Hangzhou Shapefile datasets under examples/, plus the reference derivation, per-segment results and maximum-error summary under validation/.
+
+          Retains the CSV-export, fractional-radius, desktop-resource and Windows-runtime packaging fixes from v0.2.2. Updates macOS builds to the supported macOS 15 ARM64 runner.
 
           Windows desktop application:
           - Rebuilt UrConnect.exe with bundled Qt runtime in the Windows x64 ZIP. Extract the complete ZIP before running.
