@@ -17,11 +17,16 @@ UrConnect 透過 GitHub Releases 和源碼分發。桌面程式使用 C++、Qt 5
 
 請完整解壓發布包後執行 Windows 的 `UrConnect.exe`，或 macOS/Linux 的 `UrConnect` 應用程式。Windows ZIP 已包含 Qt 執行環境。CLI 不需要 Qt 或圖形介面。
 
+## 命令列安裝與使用
+
+CLI 獨立安裝、輸入及輸出路徑選擇、參數傳遞，請參閱[命令列使用指南](command-line.md)，內含 Windows PowerShell 與 macOS/Linux 範例。下載 [CLI v0.2.5](https://github.com/intelligibleCityLab/UrConnect/releases/tag/cli-v0.2.5)，即可在同一程式中用 `--threads N|auto` 選擇執行緒數目。目前沒有 `--output` 參數。上面的桌面版 v0.2.4 安裝包保持不變，附帶的是舊 CLI。
+
 ## 從源碼構建
 
 依賴：
 
 - CMake 3.15 或更新版本
+- 自動測試需要 Python 3；若只建置程式，可加 `-DBUILD_TESTING=OFF`
 - 支援 C++11 的編譯器
 - Qt 5.15 Core、Gui、Widgets、OpenGL 模組
 - Boost 標頭

@@ -8,7 +8,7 @@ This folder contains the Sphinx source for the UrConnect user documentation. The
 
 - [English](https://intelligiblecitylab.github.io/UrConnect/en/installation.html)
 - [简体中文](https://intelligiblecitylab.github.io/UrConnect/zh-CN/installation.html)
-- [繁體中文](https://intelligiblecitylab.github.io/UrConnect/zh-TW/installation.html)
+- [繁體中文（香港）](https://intelligiblecitylab.github.io/UrConnect/zh-HK/installation.html)
 
 When the repository is private, GitHub Pages may not be available. The docs workflow still builds the HTML pages and uploads them as a GitHub Actions artifact.
 

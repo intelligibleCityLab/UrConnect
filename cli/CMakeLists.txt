@@ -35,6 +35,8 @@ target_compile_definitions(urconnect-cli-shp PRIVATE SHP_DROP_UNABLE_TO_OPEN_MSG
 
 add_library(urconnect-cli-engine STATIC ${URCONNECT_CLI_SOURCES})
 add_executable(urconnect-cli main.cpp)
+set(URCONNECT_CLI_VERSION "0.2.5")
+target_compile_definitions(urconnect-cli PRIVATE URCONNECT_CLI_VERSION="${URCONNECT_CLI_VERSION}")
 
 target_include_directories(urconnect-cli-engine PUBLIC
     ${URCONNECT_BOOST_INCLUDE_DIR}
@@ -78,6 +80,14 @@ if(BUILD_TESTING)
     )
 
     add_test(NAME cli_version COMMAND urconnect-cli --version)
+    # Parity checks are required, not silently skipped when Python is missing.
+    # Python is only needed for tests; the CLI executable has no Python dependency.
+    find_package(Python3 REQUIRED COMPONENTS Interpreter)
+    add_test(NAME cli_parallel
+        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_parallel.py
+            --cli $<TARGET_FILE:urconnect-cli>
+            --network-tool $<TARGET_FILE:urconnect-test-network>)
+    set_tests_properties(cli_parallel PROPERTIES TIMEOUT 180 LABELS correctness)
     add_test(NAME cli_logging
         COMMAND ${CMAKE_COMMAND}
             -DCLI=$<TARGET_FILE:urconnect-cli>
@@ -85,7 +95,7 @@ if(BUILD_TESTING)
             -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/run_logging_test.cmake
     )
     set_tests_properties(cli_version PROPERTIES
-        PASS_REGULAR_EXPRESSION "urconnect-cli ${CMAKE_PROJECT_VERSION}"
+        PASS_REGULAR_EXPRESSION "urconnect-cli ${URCONNECT_CLI_VERSION}"
     )
 
     add_test(NAME cli_smoke

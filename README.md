@@ -18,10 +18,11 @@
 
 <p align="center">
   <a href="https://intelligiblecitylab.github.io/UrConnect/en/installation.html">Installation</a> |
+  <a href="docs/source/en/command-line.md">Command-line guide</a> |
   <a href="https://intelligiblecitylab.github.io/UrConnect/en/getting-started.html">Getting Started</a> |
   <a href="https://intelligiblecitylab.github.io/UrConnect/en/analysis-reach.html">User Guide</a> |
   <a href="README.zh-CN.md">简体中文</a> |
-  <a href="README.zh-TW.md">繁體中文</a>
+  <a href="README.zh-HK.md">繁體中文（香港）</a>
 </p>
 
 ## Overview
@@ -43,7 +44,7 @@ The documentation is built as Sphinx HTML pages with a left navigation, page tab
 
 - [English documentation](https://intelligiblecitylab.github.io/UrConnect/en/installation.html)
 - [简体中文文档](https://intelligiblecitylab.github.io/UrConnect/zh-CN/installation.html)
-- [繁體中文文件](https://intelligiblecitylab.github.io/UrConnect/zh-TW/installation.html)
+- [繁體中文（香港）文件](https://intelligiblecitylab.github.io/UrConnect/zh-HK/installation.html)
 
 ## Installation
 
@@ -84,7 +85,9 @@ urconnect-cli od network.shp --from 10 --to 500
 urconnect-cli od network.shp --pairs pairs.csv
 ```
 
-Run `urconnect-cli --help` for the full option list. Whole-network results are appended as attribute columns to the input `.dbf` (same field names as the GUI); `netreach` and `od` write route shapefiles next to the input; `od --pairs` additionally writes a result CSV (`<pairs>_MR.csv`).
+See the [CLI guide](docs/source/en/command-line.md) for installation, input/output paths, every command, and parameter examples. Work on a copy of the complete Shapefile dataset: there is no `--output` option. Whole-network analyses and `stepdepth` update the input DBF; `netreach` and manual `od` export Shapefiles beside the input. `od --pairs` writes a result CSV beside the pairs file and `PathCount` to the input DBF, without manual-mode route Shapefiles.
+
+[CLI v0.2.5](https://github.com/intelligibleCityLab/UrConnect/releases/tag/cli-v0.2.5) supports `--threads 1`, `--threads 8`, or `--threads auto` in one executable (default: 1) for all seven whole-network commands. The desktop release remains v0.2.4; its bundled older CLI does not accept this option. Run `urconnect-cli --help` for the supported options.
 
 Set `URCONNECT_LOG_DIR` to enable timestamped CLI file logging without changing its standard output. Desktop logs are stored in the user's application-data directory, not the installation directory. Elapsed analysis time uses a monotonic wall clock with millisecond resolution.
 
@@ -109,7 +112,7 @@ When the locally supplied `UrConnect_Win/test_data/Macau.zip` is present, CTest 
 
 GitHub Actions runs the headless build and tests on Windows x64, macOS ARM64, and Linux x64 for pushes and pull requests.
 
-The `reach_correctness` test checks metric, directional, junction, and directional-metric reach against hand-derived values for every segment in two synthetic networks. It tests finite metric boundaries, turn and junction limits, disconnected components, a loop, and reversed segment endpoints. The [reference derivation and coverage](cli/tests/REACH_VALIDATION.md) document the geometry, parameters, expected values, and limitations. This tests the shared computation engine directly, before export rounding, with a maximum absolute error tolerance of 1e-9 m; it is not a comparison against an external implementation. CI publishes per-segment CSV results and a Markdown summary of maximum errors as `reach-correctness-*` artifacts and in each job's summary. Windows runs this check in both Release and Debug configurations.
+The `reach_correctness` test checks metric, directional, junction, and directional-metric reach against hand-derived values for every segment in three synthetic networks (339 cases and 885 expected values). It tests finite metric boundaries, turn and junction limits, disconnected components, a loop, and reversed segment endpoints. The [reference derivation and coverage](cli/tests/REACH_VALIDATION.md) document the geometry, parameters, expected values, and limitations. This tests the shared computation engine directly, before export rounding, with a maximum absolute error tolerance of 1e-9 m; it is not a comparison against an external implementation. CI publishes per-segment CSV results and a Markdown summary of maximum errors as `reach-correctness-*` artifacts and in each job's summary. Windows runs this check in both Release and Debug configurations.
 
 ## Repository Layout
 

@@ -17,8 +17,9 @@
 
 <p align="center">
   <a href="README.md">English</a> |
-  <a href="README.zh-TW.md">繁體中文</a> |
+  <a href="README.zh-HK.md">繁體中文（香港）</a> |
   <a href="https://intelligiblecitylab.github.io/UrConnect/zh-CN/installation.html">安装</a> |
+  <a href="docs/source/zh-CN/command-line.md">CLI 使用指南</a> |
   <a href="https://intelligiblecitylab.github.io/UrConnect/zh-CN/getting-started.html">快速开始</a> |
   <a href="https://intelligiblecitylab.github.io/UrConnect/zh-CN/user-guide.html">用户指南</a>
 </p>
@@ -41,7 +42,7 @@ UrConnect 是一个面向线段化街道网络的桌面分析工具。它将拓�
 
 - [英文文档](https://intelligiblecitylab.github.io/UrConnect/en/installation.html)
 - [简体中文文档](https://intelligiblecitylab.github.io/UrConnect/zh-CN/installation.html)
-- [繁体中文文档](https://intelligiblecitylab.github.io/UrConnect/zh-TW/installation.html)
+- [繁体中文文档](https://intelligiblecitylab.github.io/UrConnect/zh-HK/installation.html)
 
 ## 安装与构建
 
@@ -57,6 +58,12 @@ cmake --build build --config Release
 ```
 
 更多平台命令见 [安装文档](https://intelligiblecitylab.github.io/UrConnect/zh-CN/installation.html)。
+
+## 命令行界面（CLI）
+
+详见 [CLI 使用指南](docs/source/zh-CN/command-line.md)：安装、输入和输出路径、全部命令、参数列表及 OD 示例。请先复制完整 Shapefile 数据集再运行；当前没有 `--output`，结果会写入输入 DBF 或相应文件所在目录。
+
+[CLI v0.2.5](https://github.com/intelligibleCityLab/UrConnect/releases/tag/cli-v0.2.5) 在同一个程序中支持 `--threads 1`、`--threads 8` 或 `--threads auto`（默认 1），适用于七种全路网命令。桌面版仍为 v0.2.4，其安装包附带的旧 CLI 不支持该参数。
 
 ## 许可证
 

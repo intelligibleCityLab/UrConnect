@@ -1,0 +1,147 @@
+name: CLI Release
+
+on:
+  push:
+    tags: ["cli-v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: CLI package ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: windows-x64
+            os: windows-latest
+          - name: macos-arm64
+            os: macos-15
+          - name: linux-x64
+            os: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Install Windows dependencies
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          choco install boost-msvc-14.3 -y
+          $boost = Get-ChildItem C:\local -Directory -Filter "boost_*" | Sort-Object Name -Descending | Select-Object -First 1
+          if (-not $boost) { throw "Boost installation was not found" }
+          "BOOST_ROOT=$($boost.FullName -replace '\\','/')" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+      - name: Install macOS dependencies
+        if: runner.os == 'macOS'
+        run: brew install boost
+      - name: Install Linux dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends build-essential cmake libboost-dev
+      - name: Configure
+        shell: bash
+        run: |
+          if [ "$RUNNER_OS" = "macOS" ]; then
+            BOOST_ROOT="$(brew --prefix boost)"
+          elif [ "$RUNNER_OS" = "Linux" ]; then
+            BOOST_ROOT="/usr/include"
+          fi
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DURCONNECT_BUILD_GUI=OFF -DBOOST_ROOT="${BOOST_ROOT}"
+      - name: Build CLI and tests
+        run: cmake --build build --config Release --parallel 2 --target urconnect-cli urconnect-test-network urconnect-test-ddl urconnect-test-csv-export urconnect-test-reach
+      - name: Test including serial-parallel equivalence
+        run: ctest --test-dir build -C Release --output-on-failure
+      - name: Stage CLI package
+        shell: bash
+        run: |
+          executable="build/bin/Release/urconnect-cli"
+          if [ "$RUNNER_OS" = "Windows" ]; then executable="$executable.exe"; fi
+          version="$($executable --version | awk '{print $2}')"
+          if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Unexpected CLI version: $version"; exit 1
+          fi
+          if [[ "$GITHUB_REF" == refs/tags/* && "$GITHUB_REF_NAME" != "cli-v$version" ]]; then
+            echo "CLI tag and binary version do not match"; exit 1
+          fi
+          echo "CLI_VERSION=$version" >> "$GITHUB_ENV"
+          mkdir -p package/validation
+          cp "$executable" package/
+          cp cli/USAGE.txt package/CLI-USAGE.txt
+          cp -R examples package/
+          cp LICENSE THIRD_PARTY_NOTICES.md package/
+          cp -R licenses package/
+          cp SNDAApp/lib/COPYING package/Shapelib-COPYING.txt
+          cp genlib/lgpl.txt package/genlib-LGPL.txt
+          cp cli/tests/REACH_VALIDATION.md build/cli/reach-validation-Release.* package/validation/
+          cp build/Testing/Temporary/LastTest.log package/validation/
+          printf 'UrConnect CLI %s\nPlatform: %s\nSource commit: %s\n\nCLI-only package. Desktop UrConnect remains v0.2.4.\nRead CLI-USAGE.txt before running. Use --threads N or --threads auto for whole-network analysis; default is 1.\n' "$version" '${{ matrix.name }}' "$GITHUB_SHA" > package/README.txt
+      - name: Check Windows standalone dependencies
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+          $vs = & $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+          $dumpbin = Get-ChildItem "$vs\VC\Tools\MSVC\*\bin\Hostx64\x64\dumpbin.exe" | Sort-Object FullName -Descending | Select-Object -First 1
+          if (-not $dumpbin) { throw "dumpbin.exe was not found" }
+          $dependencies = & $dumpbin.FullName /dependents package/urconnect-cli.exe
+          if ($LASTEXITCODE -ne 0) { throw "Could not inspect CLI dependencies" }
+          if ($dependencies -match '(?i)(VCRUNTIME|MSVCP|MSVCR|ucrtbase|api-ms-win-crt|Qt5|shp)\S*\.dll') {
+            throw "CLI depends on an external runtime DLL"
+          }
+          Copy-Item package/urconnect-cli.exe urconnect-cli-windows-x64.exe
+          Compress-Archive -Path package/* -DestinationPath "UrConnect-CLI-$env:CLI_VERSION-windows-x64.zip"
+      - name: Check Unix dependencies and archive
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          if [ "$RUNNER_OS" = "Linux" ]; then
+            dependencies="$(ldd package/urconnect-cli)"
+            printf '%s\n' "$dependencies"
+            if grep -q 'not found' <<< "$dependencies"; then exit 1; fi
+            if readelf -d package/urconnect-cli | grep -Eq 'NEEDED.*(Qt|libshp)|/home/runner/'; then exit 1; fi
+          else
+            otool -L package/urconnect-cli
+            if otool -L package/urconnect-cli | grep -Eq '/opt/homebrew|/usr/local|Qt|libshp'; then exit 1; fi
+            codesign --force --sign - package/urconnect-cli
+            codesign --verify --strict package/urconnect-cli
+          fi
+          package/urconnect-cli --version
+          tar -czf "UrConnect-CLI-${CLI_VERSION}-${{ matrix.name }}.tar.gz" -C package .
+      - uses: actions/upload-artifact@v7
+        with:
+          name: cli-${{ matrix.name }}
+          path: |
+            UrConnect-CLI-*.zip
+            UrConnect-CLI-*.tar.gz
+            urconnect-cli-windows-x64.exe
+          if-no-files-found: error
+  publish:
+    if: startsWith(github.ref, 'refs/tags/cli-v')
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v7
+        with:
+          path: artifacts
+      - name: Write checksums
+        run: |
+          find artifacts -type f ! -name SHA256SUMS.txt -print0 | sort -z | xargs -0 sha256sum | sed -E 's#  artifacts/[^/]+/#  #' > artifacts/SHA256SUMS.txt
+      - uses: softprops/action-gh-release@v2
+        with:
+          name: UrConnect CLI v0.2.5
+          body_path: cli/RELEASE_NOTES.md
+          make_latest: false
+          overwrite_files: false
+          files: |
+            artifacts/**/UrConnect-CLI-*.zip
+            artifacts/**/UrConnect-CLI-*.tar.gz
+            artifacts/**/urconnect-cli-windows-x64.exe
+            artifacts/SHA256SUMS.txt

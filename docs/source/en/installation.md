@@ -17,11 +17,16 @@ Check the GitHub Releases page for published packages. The v0.2.4 release workfl
 
 Extract the complete package before running `UrConnect.exe` on Windows or the `UrConnect` application on macOS or Linux. The Windows ZIP includes Qt runtime libraries. The CLI does not require Qt or a display server.
 
+## Command-Line Installation And Usage
+
+For CLI-only installation, choosing input/output paths, and passing parameters, see the [Command-Line Interface guide](command-line.md). It includes Windows PowerShell and macOS/Linux examples. Download [CLI v0.2.5](https://github.com/intelligibleCityLab/UrConnect/releases/tag/cli-v0.2.5) for selectable `--threads N|auto` in one executable. There is no `--output` option. The desktop v0.2.4 packages above remain unchanged and contain the older CLI.
+
 ## Build From Source
 
 Install:
 
 - CMake 3.15 or newer
+- Python 3 for automated tests (or configure with `-DBUILD_TESTING=OFF` for an application-only build)
 - A C++11 compiler
 - Qt 5.15 with Core, Gui, Widgets, and OpenGL modules
 - Boost headers

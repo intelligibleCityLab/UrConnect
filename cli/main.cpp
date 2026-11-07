@@ -2,7 +2,7 @@
 // street-network analysis engine (reach / directional distance / OD paths).
 //
 // This program runs the same analysis code paths as the GUI
-// (MainWindow::calculate*_Single_thread in depthmapX/mainwindow.cpp)
+// (the Calculation methods called by the desktop application)
 // without any Qt dependency, so it can be embedded in reproducible
 // pipelines, CI jobs and servers.
 
@@ -19,11 +19,13 @@
 #include <cstdlib>
 #include <cstring>
 #include <fstream>
+#include <exception>
 #include <iostream>
 #include <map>
 #include <set>
 #include <sstream>
 #include <string>
+#include <thread>
 #include <vector>
 
 // Globals referenced by the engine (defined in mainwindow.cpp in the GUI).
@@ -43,7 +45,8 @@ Whole-network commands (append result columns to the input .dbf):
   md        Metric distance           --radius 400,800 [--junction-turns N] [--weight ATTR,...]
   dr        Directional reach         --angle 45[,90] --turns 0,1,2 [--junction-turns N] [--weight ATTR,...]
   ddl       Directional distance      --radius 400,800 --angle 45[,90] [--weight ATTR,...]
-  mdr       Metric + directional reach --radius 400,800 --angle 45[,90] --turns 0,1,2 [--weight ATTR,...]
+  mdr       Directional then metric reach --radius 400,800 --angle 45[,90] --turns 0,1,2
+              [--junction-turns N] [--weight ATTR,...]
   jnr       Junction reach            --junction-degree 3 --junction-limit 2,3 [--weight ATTR,...]
   jnd       Junction distance         --radius 400,800 --junction-degree 3 [--weight ATTR,...]
 
@@ -54,15 +57,32 @@ Origin-based commands:
               --from 1,2,3 --type mr|dr|jnr [--angle A] [--junction-degree N]
   od        Shortest path(s) between roads; writes Path_* shapefiles, or a
               result CSV when --pairs is used
-              --from 1 [--to 5] [--pairs pairs.csv] --type mr|dr|jnr
+              (--from 1 [--to 5] OR --pairs pairs.csv) --type mr|dr|jnr
               [--angle A] [--junction-turns N]
 
 General options:
   -h, --help      Show this help
   --version       Show version
+  --threads N     Whole-network analysis workers (positive integer or auto;
+                  default 1, capped by CPU concurrency and origin count)
 
-Parameter lists accept comma-separated values (e.g. --radius 400,800,1000),
-each value producing its own result column, exactly as in the GUI.
+Whole-network parameter lists accept comma-separated values (e.g. --radius 400,800),
+with result columns for each parameter combination. netreach uses single limits.
+
+Input and output:
+  Work on a copy of the complete .shp/.shx/.dbf dataset and any sidecar files.
+  Whole-network commands and stepdepth update the input .dbf. There is no --output.
+  netreach and manual od write Shapefiles beside the input network.
+  od --pairs writes a result CSV beside the pairs file and PathCount to the input DBF.
+  OD CSV distance is the selected route's geometric length for every --type.
+  Quote paths containing spaces; relative paths use the current working directory.
+  Road IDs are zero-based Shapefile record indices, not custom attribute IDs.
+
+--threads applies to reach, md, dr, ddl, mdr, jnr and jnd only. Worker results
+are written to the DBF serially after all analysis workers have finished.
+netreach supports mr, dr and jnr only; combined directional-metric reach uses mdr
+for whole-network analysis and is not exposed as a CLI netreach type.
+Full guide: https://intelligiblecitylab.github.io/UrConnect/en/command-line.html
 )";
 
 // Same sanitisation as the GUI's transform() in mainwindow.cpp.
@@ -226,13 +246,13 @@ bool validateNumberList(const Options &opts, const std::string &key, bool intege
 
 bool validateOptionNames(const Options &opts, std::string &error) {
     static const std::map<std::string, std::set<std::string>> allowed = {
-        {"reach", {"radius", "junction-turns", "weight"}},
-        {"md", {"radius", "junction-turns", "weight"}},
-        {"dr", {"angle", "turns", "junction-turns", "weight"}},
-        {"ddl", {"radius", "angle", "weight"}},
-        {"mdr", {"radius", "angle", "turns", "junction-turns", "weight"}},
-        {"jnr", {"junction-degree", "junction-limit", "weight"}},
-        {"jnd", {"radius", "junction-degree", "weight"}},
+        {"reach", {"radius", "junction-turns", "weight", "threads"}},
+        {"md", {"radius", "junction-turns", "weight", "threads"}},
+        {"dr", {"angle", "turns", "junction-turns", "weight", "threads"}},
+        {"ddl", {"radius", "angle", "weight", "threads"}},
+        {"mdr", {"radius", "angle", "turns", "junction-turns", "weight", "threads"}},
+        {"jnr", {"junction-degree", "junction-limit", "weight", "threads"}},
+        {"jnd", {"radius", "junction-degree", "weight", "threads"}},
         {"netreach", {"from", "type", "radius", "angle", "turns", "junction-turns",
                       "junction-degree", "junction-limit", "weight"}},
         {"stepdepth", {"from", "type", "angle", "junction-degree", "weight"}},
@@ -255,6 +275,15 @@ bool validateOptionNames(const Options &opts, std::string &error) {
 bool validateOptions(const Options &opts, std::string &error) {
     if (!validateOptionNames(opts, error)) {
         return false;
+    }
+    const std::string threads = getOpt(opts, "threads", "1");
+    if (threads != "auto") {
+        double value = 0;
+        if (threads.find_first_not_of("0123456789") != std::string::npos ||
+            !parseNumber(threads, true, false, value) || value < 1) {
+            error = "--threads requires a positive integer or auto";
+            return false;
+        }
     }
 
     if (!validateNumberList(opts, "radius", false, true, error) ||
@@ -461,8 +490,71 @@ bool loadAndValidateNetwork(const Options &opts, ShapeFileAccessor &FA, Graph *&
 namespace {
 
 // ---------------------------------------------------------------------------
-// Whole-network analyses (mirror MainWindow::calculate*_Single_thread)
+// Whole-network analyses with optional per-origin parallel workers
 // ---------------------------------------------------------------------------
+
+void runWholeNetwork(Calculation &calculation, ShapeFileAccessor &network,
+                     const Options &opts, void (Calculation::*method)(ShapeFileAccessor &)) {
+    // The shared preprocessor treats thresholds near INT_MAX as disabled and
+    // can leave optional cost tables empty. Legacy engine lookups use [] and
+    // default missing costs to zero. Materialise those entries before either
+    // serial or parallel execution so workers never insert into shared maps.
+    if (calculation.isJnc || calculation.isJncR || calculation.isJncD) {
+        for (const auto &road : network.roadNode) {
+            for (int node : road.second) network.Jnc.emplace(node, 0);
+        }
+    }
+    if (calculation.isDR) {
+        for (const auto &road : network.AdjRoadList) {
+            auto &turns = network.AdjTurnMP[road.first];
+            for (int next : road.second) {
+                const std::string key = std::to_string(road.first) + ", " + std::to_string(next);
+                network.AdjTurn.emplace(key, 0);
+                turns.emplace(next, 0);
+            }
+        }
+    }
+
+    const unsigned available = std::max(1u, std::thread::hardware_concurrency());
+    const std::string argument = getOpt(opts, "threads", "1");
+    // validateOptions has already restricted numeric values to [1, INT_MAX].
+    const unsigned requested = argument == "auto" ? available : static_cast<unsigned>(std::stoul(argument));
+    const unsigned count = static_cast<unsigned>(std::min<size_t>(
+        std::min(requested, available), network.roadID.size()));
+    std::cerr << "Analysis workers: " << count << std::endl;
+    if (count <= 1) {
+        calculation.setMultiPara(network, 1, INT_MAX - 1, 1);
+        (calculation.*method)(network);
+        calculation.OutputData(network);
+        return;
+    }
+
+    // Initialisation and angle preprocessing have finished before this call.
+    // Each origin belongs to one worker with its own Calculation result maps.
+    std::vector<std::set<int>> groups(count);
+    unsigned index = 0;
+    for (int road : network.roadID) groups[index++ % count].insert(road);
+    std::vector<Calculation> workers(count, calculation);
+    for (unsigned i = 0; i < count; ++i) workers[i].setMultiParaByRand(groups[i], 1);
+    std::vector<std::exception_ptr> errors(count);
+    std::vector<std::thread> threads;
+    threads.reserve(count);
+    try {
+        for (unsigned i = 0; i < count; ++i) {
+            threads.emplace_back([&, i]() {
+                try { (workers[i].*method)(network); }
+                catch (...) { errors[i] = std::current_exception(); }
+            });
+        }
+    } catch (...) {
+        for (auto &thread : threads) thread.join();
+        throw;
+    }
+    for (auto &thread : threads) thread.join();
+    for (const auto &error : errors) if (error) std::rethrow_exception(error);
+    // Shapelib writes are deliberately serial, as in the desktop application.
+    for (auto &worker : workers) worker.OutputData(network);
+}
 
 int runReach(const Options &opts) {
     std::string error;
@@ -478,9 +570,7 @@ int runReach(const Options &opts) {
     std::string txNewJnc = getOpt(opts, "junction-turns");
 
     CA.init_MR_para(FA, *g, opts.input, getOpt(opts, "radius"), ckJnc, false, txNewJnc, weights);
-    CA.setMultiPara(FA, 1, INT_MAX - 1, 1);
-    CA.calculateMR(FA);
-    CA.OutputData(FA);
+    runWholeNetwork(CA, FA, opts, &Calculation::calculateMR);
     return 0;
 }
 
@@ -498,9 +588,7 @@ int runMd(const Options &opts) {
     std::string txNewJnc = getOpt(opts, "junction-turns");
 
     CA.init_MD_para(FA, *g, opts.input, getOpt(opts, "radius"), ckJnc, false, txNewJnc, weights);
-    CA.setMultiPara(FA, 1, INT_MAX - 1, 1);
-    CA.calculateMD(FA);
-    CA.OutputData(FA);
+    runWholeNetwork(CA, FA, opts, &Calculation::calculateMD);
     return 0;
 }
 
@@ -523,9 +611,7 @@ int runDr(const Options &opts) {
     for (const std::string &angle : splitList(getOpt(opts, "angle"))) {
         CA.clearOldData();
         CA.init_DR_para(FA, *g, opts.input, "", angle, getOpt(opts, "turns"), ckJnc, false, txNewJnc, weights);
-        CA.setMultiPara(FA, 1, INT_MAX - 1, 1);
-        CA.calculateDR(FA);
-        CA.OutputData(FA);
+        runWholeNetwork(CA, FA, opts, &Calculation::calculateDR);
     }
     return 0;
 }
@@ -546,9 +632,7 @@ int runDdl(const Options &opts) {
     for (const std::string &angle : splitList(getOpt(opts, "angle"))) {
         CA.clearOldData();
         CA.init_DDL_para(FA, *g, opts.input, getOpt(opts, "radius"), angle, "", false, false, "", weights);
-        CA.setMultiPara(FA, 1, INT_MAX - 1, 1);
-        CA.calculateDDL(FA);
-        CA.OutputData(FA);
+        runWholeNetwork(CA, FA, opts, &Calculation::calculateDDL);
     }
     return 0;
 }
@@ -572,9 +656,7 @@ int runMdr(const Options &opts) {
         CA.clearOldData();
         CA.init_MDR_para(FA, *g, opts.input, getOpt(opts, "radius"), angle, getOpt(opts, "turns"),
                          ckJnc, false, txNewJnc, weights);
-        CA.setMultiPara(FA, 1, INT_MAX - 1, 1);
-        CA.calculateMDR(FA);
-        CA.OutputData(FA);
+        runWholeNetwork(CA, FA, opts, &Calculation::calculateMDR);
     }
     return 0;
 }
@@ -594,9 +676,7 @@ int runJnr(const Options &opts) {
 
     CA.init_JnR_para(FA, *g, opts.input, getOpt(opts, "junction-degree"), getOpt(opts, "junction-limit"),
                      false, "", false, weights);
-    CA.setMultiPara(FA, 1, INT_MAX - 1, 1);
-    CA.calculateJncR(FA);
-    CA.OutputData(FA);
+    runWholeNetwork(CA, FA, opts, &Calculation::calculateJncR);
     return 0;
 }
 
@@ -615,9 +695,7 @@ int runJnd(const Options &opts) {
 
     CA.init_JnD_para(FA, *g, opts.input, getOpt(opts, "radius"), getOpt(opts, "junction-degree"),
                      false, "", false, weights);
-    CA.setMultiPara(FA, 1, INT_MAX - 1, 1);
-    CA.calculateJncD(FA);
-    CA.OutputData(FA);
+    runWholeNetwork(CA, FA, opts, &Calculation::calculateJncD);
     return 0;
 }
 
@@ -892,7 +970,7 @@ int main(int argc, char **argv) {
             return opts.command.empty() ? 1 : 0;
         }
         if (opts.command == "version") {
-            std::cout << "urconnect-cli " << URCONNECT_VERSION
+            std::cout << "urconnect-cli " << URCONNECT_CLI_VERSION
                       << " (UrConnect network analysis engine)" << std::endl;
             return 0;
         }

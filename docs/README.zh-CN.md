@@ -8,7 +8,7 @@
 
 - [English](https://intelligiblecitylab.github.io/UrConnect/en/installation.html)
 - [简体中文](https://intelligiblecitylab.github.io/UrConnect/zh-CN/installation.html)
-- [繁體中文](https://intelligiblecitylab.github.io/UrConnect/zh-TW/installation.html)
+- [繁體中文（香港）](https://intelligiblecitylab.github.io/UrConnect/zh-HK/installation.html)
 
 仓库为 private 时，GitHub Pages 可能不可用。docs workflow 仍会构建 HTML 页面，并把结果上传为 GitHub Actions artifact。
 

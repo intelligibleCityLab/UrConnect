@@ -1,0 +1,93 @@
+UrConnect CLI quick start (CLI v0.2.5; desktop remains v0.2.4)
+
+The CLI runs without Qt, Python, or a display server. Extract the package first.
+Windows: run urconnect-cli.exe from the ZIP, or download the separate
+urconnect-cli-windows-x64.exe. macOS: use the Apple Silicon/arm64 package.
+Linux: the release is built on Ubuntu 24.04 x64 and needs standard C/C++ runtimes.
+macOS and Linux packages remain experimental.
+
+Open PowerShell (Windows) or Terminal (macOS/Linux) in the extracted folder:
+  Windows:      .\urconnect-cli.exe --version
+  macOS/Linux:  ./urconnect-cli --version
+Replace --version with --help to list commands. If using the separate Windows
+asset, replace urconnect-cli.exe with urconnect-cli-windows-x64.exe.
+
+INPUT AND OUTPUT PATHS
+Use a copy of your dataset. All features must be two-vertex line segments.
+Keep .shp, .shx and .dbf together, and retain .prj/.cpg and other sidecar files.
+Use projected coordinates in metres for metre-based radii; no reprojection is
+performed. Quote paths with spaces. Relative paths use the terminal's current
+working directory, not the executable's directory.
+
+There is NO --output option: copy the complete dataset to the desired output
+folder, then pass that copy's .shp path. Whole-network results update its DBF.
+For example, after copying network.* to a new result folder:
+
+  Windows PowerShell:
+    & "C:\Tools\UrConnect\urconnect-cli.exe" reach "C:\Results\run-01\network.shp" --radius "400,800"
+
+  macOS/Linux:
+    "/path/to/UrConnect/urconnect-cli" reach "/path/to/Results/run-01/network.shp" --radius 400,800
+
+Open the copied network.shp in GIS to view the R400 and R800 result fields.
+Do not run simultaneous commands on the same dataset. Repeated runs can
+overwrite matching fields/files. Keep an untouched input copy.
+
+COMMANDS AND PARAMETERS
+Syntax: urconnect-cli <command> <input.shp> [options]
+  reach     --radius 400,800
+  md        --radius 400,800
+  dr        --angle 45 --turns 0,1,2
+  ddl       --radius 400,800 --angle 45
+  mdr       --radius 400,800 --angle 45 --turns 1,2
+  jnr       --junction-degree 3 --junction-limit 2,3
+  jnd       --radius 400,800 --junction-degree 3
+  netreach  --from 10 --type mr --radius 400
+  stepdepth --from 10 --type dr --angle 45
+  od        --from 10 --to 20 --type mr
+  od        --pairs "/path/to/run-01/pairs.csv" --type mr
+
+Replace example road IDs with valid zero-based Shapefile record indices;
+these are not custom ID attributes. --weight accepts existing numeric DBF
+field names. Lists use commas without spaces. --radius n means unlimited.
+--angle is a degree threshold; --turns is a maximum number of directional
+changes. --junction-degree is a node-degree threshold; --junction-limit is
+the maximum counted junctions. --junction-turns is an additional degree
+threshold, NOT a turn limit. See the full guide for per-command restrictions.
+
+Whole-network commands support parameter sweeps; netreach uses single limits.
+mdr first selects the directional-reachable subset, then runs metric reach
+within it. CLI netreach only supports mr/dr/jnr, not combined interactive DMR.
+One executable supports --threads 1, --threads 8, or --threads auto. The default
+is 1. This applies to all seven whole-network commands above, not netreach,
+stepdepth or od. The actual worker count is capped by CPU concurrency and
+origin road count, and is printed as Analysis workers: N. More workers can
+use more memory. Computation is parallel; DBF writing remains serial.
+
+Example: urconnect-cli mdr network.shp --radius 250 --angle 45 --turns 2 --threads 8
+The CLI bundled with desktop v0.2.4 is older and lacks --threads. Use CLI v0.2.5
+from https://github.com/intelligibleCityLab/UrConnect/releases/tag/cli-v0.2.5
+
+RESULT LOCATIONS
+Whole-network analyses: input DBF result fields.
+stepdepth: input DBF StepD_mr/StepD_dr/StepD_jnr fields.
+netreach: Reach_* Shapefiles beside the input network.
+Manual od: Path_* Shapefiles beside the network, with folders for multiple paths.
+od --pairs: result CSV beside the pairs CSV, plus input DBF PathCount; no route
+Shapefiles. Copy pairs.csv to the run folder to keep these results together.
+
+OD CSV input needs a header followed by zero-based integer road pairs:
+  origin,destination
+  10,20
+  20,30
+
+OD output: <pairs>_MR.csv, <pairs>_DR.csv or <pairs>_JnR.csv.
+The distance column is geometric path length in input coordinate units for all
+types; --type changes how the route is selected. The path column lists
+intermediate road IDs, excluding the endpoint roads.
+
+FULL GUIDES
+English: https://intelligiblecitylab.github.io/UrConnect/en/command-line.html
+Simplified Chinese: https://intelligiblecitylab.github.io/UrConnect/zh-CN/command-line.html
+Traditional Chinese (Hong Kong): https://intelligiblecitylab.github.io/UrConnect/zh-HK/command-line.html
+Source files: docs/source/<language>/command-line.md

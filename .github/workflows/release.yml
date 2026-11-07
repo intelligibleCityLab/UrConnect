@@ -41,6 +41,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
 
       - name: Install Windows Qt
         if: runner.os == 'Windows'
@@ -259,6 +262,7 @@ jobs:
           cp build/cli/reach-validation-Release.csv package/validation/
           cp build/cli/reach-validation-Release.md package/validation/
           cp cli/tests/REACH_VALIDATION.md package/validation/
+          cp cli/USAGE.txt package/CLI-USAGE.txt
           cp LICENSE package/
           cp THIRD_PARTY_NOTICES.md package/
           cp -R licenses package/
@@ -272,6 +276,7 @@ jobs:
           This package contains the rebuilt desktop application and standalone CLI. macOS and Linux packages remain experimental. Extract the whole package before running the desktop application.
 
           Example street networks: examples/apt/ and examples/hangzhou/.
+          Command-line use: CLI-USAGE.txt explains installation, input/output paths, parameters and result locations. Run urconnect-cli --help (urconnect-cli.exe on Windows) for supported options.
           Reach correctness: validation/ contains hand-derived reference values and this build's per-segment CSV results and maximum-error summary.
           EOF
           if [ "$RUNNER_OS" = "Linux" ]; then

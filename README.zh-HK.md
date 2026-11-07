@@ -18,9 +18,10 @@
 <p align="center">
   <a href="README.md">English</a> |
   <a href="README.zh-CN.md">简体中文</a> |
-  <a href="https://intelligiblecitylab.github.io/UrConnect/zh-TW/installation.html">安裝</a> |
-  <a href="https://intelligiblecitylab.github.io/UrConnect/zh-TW/getting-started.html">快速開始</a> |
-  <a href="https://intelligiblecitylab.github.io/UrConnect/zh-TW/user-guide.html">使用指南</a>
+  <a href="https://intelligiblecitylab.github.io/UrConnect/zh-HK/installation.html">安裝</a> |
+  <a href="docs/source/zh-HK/command-line.md">CLI 使用指南</a> |
+  <a href="https://intelligiblecitylab.github.io/UrConnect/zh-HK/getting-started.html">快速開始</a> |
+  <a href="https://intelligiblecitylab.github.io/UrConnect/zh-HK/user-guide.html">使用指南</a>
 </p>
 
 ## 簡介
@@ -37,11 +38,11 @@ UrConnect 是一個面向線段化街道網路的桌面分析工具。它將拓�
 
 ## 文件
 
-文件構建為 Sphinx HTML 頁面，包含英文、簡體中文和繁體中文三個入口：
+文件構建為 Sphinx HTML 頁面，包含英文、簡體中文和繁體中文（香港）三個入口：
 
 - [英文文件](https://intelligiblecitylab.github.io/UrConnect/en/installation.html)
 - [簡體中文文檔](https://intelligiblecitylab.github.io/UrConnect/zh-CN/installation.html)
-- [繁體中文文件](https://intelligiblecitylab.github.io/UrConnect/zh-TW/installation.html)
+- [繁體中文（香港）文件](https://intelligiblecitylab.github.io/UrConnect/zh-HK/installation.html)
 
 ## 安裝與構建
 
@@ -54,7 +55,13 @@ cmake -S . -B build -DQT5_ROOT=/path/to/Qt/5.15 -DBOOST_ROOT=/path/to/boost
 cmake --build build --config Release
 ```
 
-更多平台命令見 [安裝文件](https://intelligiblecitylab.github.io/UrConnect/zh-TW/installation.html)。
+更多平台命令見 [安裝文件](https://intelligiblecitylab.github.io/UrConnect/zh-HK/installation.html)。
+
+## 命令列介面（CLI）
+
+詳見 [CLI 使用指南](docs/source/zh-HK/command-line.md)：安裝、輸入及輸出路徑、全部命令、參數列表及 OD 範例。請先複製完整 Shapefile 資料集再執行；目前沒有 `--output`，結果會寫入輸入 DBF 或相應檔案所在目錄。
+
+[CLI v0.2.5](https://github.com/intelligibleCityLab/UrConnect/releases/tag/cli-v0.2.5) 在同一個程式中支援 `--threads 1`、`--threads 8` 或 `--threads auto`（預設 1），適用於七種全路網命令。桌面版仍為 v0.2.4，其安裝包附帶的舊 CLI 不支援該參數。
 
 ## 授權
 
