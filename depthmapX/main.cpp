@@ -98,6 +98,9 @@ int main(int argc, char *argv[])
 #else
     logConfig.level = UrConnect::LogLevel::Debug;
 #endif
+    // Keep Qt's explicitly requested plugin diagnostics visible in release builds.
+    if (qEnvironmentVariableIntValue("QT_DEBUG_PLUGINS") > 0)
+        logConfig.level = UrConnect::LogLevel::Debug;
     logConfig.asyncEnabled = false;  // 同步模式：避免异步队列在跨 DLL 场景下的崩溃
     logConfig.asyncQueueSize = 8192;
 
