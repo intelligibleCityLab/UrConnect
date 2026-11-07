@@ -277,6 +277,27 @@ jobs:
           if [ "$RUNNER_OS" = "Linux" ]; then
             printf '\nLinux binaries are built and tested on Ubuntu 24.04 x64. The desktop app requires system Qt 5, OpenGL and GLU libraries; the CLI requires only the standard C/C++ runtime, not Qt or Shapelib DLLs.\n' >> package/README.txt
           fi
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            cat >> package/README.txt <<'EOF'
+
+          Getting started (Windows x64):
+          1. Extract the entire ZIP to a folder.
+          2. Open UrConnect.exe. Keep all DLLs and subfolders beside it.
+          Qt and the required MSVC runtime are included; no separate Qt installation is needed.
+          The executable is not publisher-signed, so Windows may ask you to confirm the publisher before opening it.
+          EOF
+          fi
+          if [ "$RUNNER_OS" = "macOS" ]; then
+            cat >> package/README.txt <<'EOF'
+
+          Getting started (macOS, Apple Silicon / arm64):
+          1. Extract the archive. This build is for Apple Silicon Macs, not Intel Macs.
+          2. Open UrConnect.app, or drag it to Applications first.
+          Qt and its required runtime libraries are included; Homebrew and a separate Qt installation are not needed.
+          This app is ad-hoc signed, not Apple-notarized. On first launch, macOS may require approval under System Settings > Privacy & Security > Open Anyway after you try opening it.
+          Keep examples/ if you want the bundled Apt and Hangzhou datasets. urconnect-cli is optional for command-line use.
+          EOF
+          fi
 
       - name: Archive Unix package
         if: runner.os != 'Windows'
@@ -316,18 +337,13 @@ jobs:
           cat > release-notes.md <<EOF
           UrConnect ${GITHUB_REF_NAME}
 
-          Corrects three reach-calculation boundary cases in the engine shared by the desktop application and CLI:
-          - Unlimited metric reach now includes only the source's connected component.
-          - Source-only directional-metric reach is capped at the actual source-segment length.
-          - Directional-metric reach retains partial lengths when the metric radius touches every segment without fully covering the network.
+          Directional-metric reach now follows the Grasshopper reference procedure: first select the directional-reachable road subset, then calculate metric reach within that subset. This applies to whole-network analysis, interactive origin-based reach, and collective reach from selected segments. Partial coverage and overlapping selected-source fragments are retained and merged consistently.
 
-          Adds automated numerical validation of metric, directional, junction, and directional-metric reach against hand-derived values on two synthetic networks. Each platform's build checks 702 source-segment results across 156 parameter/orientation cases, with a maximum absolute error tolerance of 1e-9 m. This is synthetic-network validation, not a comparison with an external reference implementation.
+          Automated validation checks 885 expected values across 339 cases on three hand-derived networks, including competing routes, scalar and multi-parameter runs, partial segments, reversed endpoints, interactive reach geometry, and collective coverage. The in-memory tolerance is 1e-9 m. Separately, all 207 Apt directional-metric reach results matched the supplied Grasshopper reference within 0.001 m (maximum difference 0.0001 m after DBF rounding). Fifteen non-DMR analysis cases produced identical data and geometry outputs before and after the calculation change.
 
           Every desktop package includes the Apt and Hangzhou Shapefile datasets under examples/, plus the reference derivation, per-segment results and maximum-error summary under validation/.
 
-          Retains the CSV-export, fractional-radius, desktop-resource and Windows-runtime packaging fixes from v0.2.2. Updates macOS builds to the supported macOS 15 ARM64 runner.
-
-          Bundles the transitive Brotli runtime needed by the macOS Cocoa plugin on current Homebrew builds.
+          Retains the reach boundary fixes and runtime packaging from v0.2.3, including the Brotli dependency required by the macOS Cocoa plugin. No other analysis branches were changed for this release.
 
           Windows desktop application:
           - Rebuilt UrConnect.exe with bundled Qt runtime in the Windows x64 ZIP. Extract the complete ZIP before running.
@@ -336,7 +352,7 @@ jobs:
           - Windows x64: urconnect-cli-windows-x64.exe
 
           Experimental artifacts:
-          - macOS arm64
+          - macOS arm64 (Apple Silicon only; bundled Qt runtime; ad-hoc signed, not Apple-notarized)
           - Linux x64
 
           Desktop and CLI packages for all three platforms use the updated shared C++ analysis code and pass automated regression tests. macOS and Linux packages remain marked experimental while broader platform validation continues.
