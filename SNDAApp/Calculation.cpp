@@ -4231,10 +4231,12 @@ void Calculation::calculateMRbyDij(ShapeFileAccessor& fileAccessor) {
 			double mr = 0, Ls0 = 0, sumLs = 0, sumdLs = 0;
 			if (MRLimit == -1)
 			{
-				//全部线段都能通行，所有道路的mr是一致的，但是meanMD是不同的
+				// An unlimited radius still cannot cross disconnected components.
 				double mr = 0, sumdLs = 0;
-				outRoad.insert(fileAccessor.roadID.begin(), fileAccessor.roadID.end());
 				for (auto it = fileAccessor.roadID.begin(); it != fileAccessor.roadID.end(); it++) {
+					if (dist[*it] == static_cast<double>(INT_MAX))
+						continue; // Dijkstra's unreached-distance sentinel.
+					outRoad.insert(*it);
 					mr += fileAccessor.Length[*it];
 					if (*it != startRoad) {
 						//计算ds
@@ -5820,7 +5822,8 @@ void Calculation::calculateMDR(ShapeFileAccessor &fileAccessor) {
 					CalculateRoadsMRbyBFS(fileAccessor, distances, MRLimit, startRoad, outRoad, partIn, inRoad, partInRoads_all, partInReachRoadNodeLen,
 						mdr_partInReachRoadNodeCoor, partInRoads_all);
 
-					if (outRoad.size() == fileAccessor.roadID.size()) {
+					// Touching every segment is not the same as covering every segment.
+					if (inRoad.size() == fileAccessor.roadID.size()) {
 
 						CalculateRoadsDRbyBFS(fileAccessor, startRoad, DRLimitSet, dict_real_min_dist, validRoad);
 
@@ -5871,7 +5874,8 @@ void Calculation::calculateMDR(ShapeFileAccessor &fileAccessor) {
 							for (auto it2 = validRoad[DRLimit].begin(); it2 != validRoad[DRLimit].end(); it2++) {
 								int road_id = *it2;
 								if (validRoad[DRLimit].size() == 1) {
-									dr += 2 * MRLimit;
+									// The source-only reach cannot exceed the source's length.
+									dr += std::min(2 * MRLimit, fileAccessor.Length[road_id]);
 									continue;
 								}
 								

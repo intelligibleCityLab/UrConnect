@@ -109,6 +109,8 @@ When the locally supplied `UrConnect_Win/test_data/Macau.zip` is present, CTest 
 
 GitHub Actions runs the headless build and tests on Windows x64, macOS ARM64, and Linux x64 for pushes and pull requests.
 
+The `reach_correctness` test checks metric, directional, junction, and directional-metric reach against hand-derived values for every segment in two synthetic networks. It tests finite metric boundaries, turn and junction limits, disconnected components, a loop, and reversed segment endpoints. The [reference derivation and coverage](cli/tests/REACH_VALIDATION.md) document the geometry, parameters, expected values, and limitations. This tests the shared computation engine directly, before export rounding, with a maximum absolute error tolerance of 1e-9 m; it is not a comparison against an external implementation. CI publishes per-segment CSV results and a Markdown summary of maximum errors as `reach-correctness-*` artifacts and in each job's summary. Windows runs this check in both Release and Debug configurations.
+
 ## Repository Layout
 
 ```text

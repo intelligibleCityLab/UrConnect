@@ -54,15 +54,34 @@ jobs:
           cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DURCONNECT_BUILD_GUI=OFF -DBOOST_ROOT="${BOOST_ROOT}"
 
       - name: Build
-        run: cmake --build build --config Release --parallel 2 --target urconnect-cli urconnect-test-network urconnect-test-ddl urconnect-test-csv-export
+        run: cmake --build build --config Release --parallel 2 --target urconnect-cli urconnect-test-network urconnect-test-ddl urconnect-test-csv-export urconnect-test-reach
 
       - name: Test
         run: ctest --test-dir build -C Release --output-on-failure
 
       - name: Build Windows Debug
         if: runner.os == 'Windows'
-        run: cmake --build build --config Debug --parallel 2 --target urconnect-cli urconnect-test-network urconnect-test-ddl urconnect-test-csv-export
+        run: cmake --build build --config Debug --parallel 2 --target urconnect-cli urconnect-test-network urconnect-test-ddl urconnect-test-csv-export urconnect-test-reach
 
       - name: Test Windows Debug
         if: runner.os == 'Windows'
         run: ctest --test-dir build -C Debug --output-on-failure
+
+      - name: Summarize reach correctness
+        if: always()
+        shell: bash
+        run: |
+          for report in build/cli/reach-validation-*.md; do
+            if [ -f "$report" ]; then
+              printf '\n## %s\n\n' "$(basename "$report" .md)" >> "$GITHUB_STEP_SUMMARY"
+              cat "$report" >> "$GITHUB_STEP_SUMMARY"
+            fi
+          done
+
+      - name: Upload reach correctness reports
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: reach-correctness-${{ matrix.name }}
+          path: build/cli/reach-validation-*
+          if-no-files-found: warn
