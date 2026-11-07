@@ -1,7 +1,8 @@
 # Numerical reach validation
 
 The reach test compares every source segment against literal, independently
-hand-derived expected lengths for two small networks. The expected values below
+hand-derived expected lengths for two small networks, and checks one specified
+source on a third network with competing routes. The expected values below
 were derived from the geometry and reach definitions before running the engine;
 they are not snapshots of production output. This document specifies the oracle
 and test scope, and does not claim that a particular build has passed.
@@ -16,9 +17,11 @@ ctest --test-dir build -C Release -R '^reach_correctness$' --output-on-failure -
 
 Reports are written to `build/cli/reach-validation-Release.csv` and `.md`.
 For single-configuration generators, configure `CMAKE_BUILD_TYPE=Release`.
-The current fixtures yield 156 parameter/orientation cases and 702 individual
-source-segment comparisons. CSV segment IDs are zero-based: A through E are
-0 through 4, and the square's four edges are 0 through 3 in listed order.
+The current fixtures yield 339 parameter/orientation cases and 885 individual
+source-segment comparisons. The original tree and square account for 156 cases
+and 702 comparisons; the competing-route fixture adds 183 cases/comparisons,
+including geometry/collective totals for selected origins.
+CSV segment IDs are zero-based, in the segment order listed for each fixture.
 
 ## Definitions and measurement
 
@@ -36,9 +39,12 @@ Coordinates and segment lengths are in metres. All calculations are unweighted.
   qualifying junctions. A node qualifies when its degree is **at least** the
   degree threshold. Crossing a qualifying shared endpoint between two segments
   costs one; the source segment itself costs zero.
-- **MDR:** reached length subject to both the metric radius and the directional
-  limit. Partial metric contributions are retained only where the directional
-  constraint permits access.
+- **MDR:** first determine the DR-reachable whole-segment subset, then measure
+  metric reach from the source midpoint using only that subset. Metric shortest
+  paths cannot pass through a segment excluded by DR. This is the DR-first
+  composition used by the Grasshopper reference implementation, not an
+  intersection of independent full-network DR/MR results, and not a guarantee
+  that one path jointly satisfies both limits.
 
 The source is available in both travel directions. Each physical segment, or
 reached portion of it, contributes once even if it is accessible by multiple
@@ -193,6 +199,85 @@ requires two. The two paths to the opposite edge do not duplicate its length.
 | 25 | 1 | 30 |
 | 25 | 2 | 40 |
 
+## Competing routes: DR must precede MR
+
+The third fixture has eight segments in this order. Only source S (ID 0) has
+an analytic oracle here; the engine still calculates the complete network.
+
+| ID | Start | End | Length |
+| --- | --- | --- | ---: |
+| S | (-10, 0) | (0, 0) | 10 |
+| A | (0, 0) | (40, 0) | 40 |
+| B | (40, 0) | (40, 20) | 20 |
+| C | (40, 20) | (10, 20) | 30 |
+| T | (10, 20) | (0, 20) | 10 |
+| D | (0, 0) | (0, 10) | 10 |
+| E | (0, 10) | (10, 10) | 10 |
+| F | (10, 10) | (10, 20) | 10 |
+
+From S, the directional subsets at the 45-degree threshold are:
+
+| Turn limit | DR subset | Total length |
+| ---: | --- | ---: |
+| 0 | S, A | 50 |
+| 1 | S, A, B, D | 80 |
+| 2 | S, A, B, C, T, D, E | 130 |
+| 3 | All segments | 140 |
+
+The turn counts are obtained directly from the horizontal/vertical route
+sequences. S-A is straight. B and D need one turn; C, T and E need two;
+F needs three via either side of the cycle. The test also checks these standalone
+DR totals so an incorrect directional subset cannot mask a composition error.
+
+For two turns, F is removed **before** calculating metric distances. The source
+midpoint is 5 m from (0,0). In this subnetwork, entry distances to A, B, C, T, D,
+and E are respectively 5, 45, 65, 95, 5, and 15 m. Thus R=70 contributes
+`10 + 40 + 20 + 5 + 0 + 10 + 10 = 95` m. R=100 reaches all of C and 5 m of T,
+giving 125 m; unlimited radius gives all 130 m of the DR subset.
+
+Computing MR first would allow the short route D-E-F to (10,20): that endpoint
+is only 35 m from the source midpoint on the full network. At R=70 this makes
+all of C and T metrically covered, while the full A-B-C route remains present
+for the subsequent directional search. That reversed calculation gives 130 m
+instead of 95 m. This fixture therefore distinguishes the two operation orders.
+
+The literal DR-first metric totals checked for source S are:
+
+| Metric radius | 0 turns | 1 turn | 2 turns | 3 turns |
+| ---: | ---: | ---: | ---: | ---: |
+| 2.5 | 5 | 5 | 5 | 5 |
+| 35 | 40 | 50 | 60 | 70 |
+| 70 | 50 | 80 | 95 | 140 |
+| 100 | 50 | 80 | 125 | 140 |
+| n | 50 | 80 | 130 | 140 |
+
+At R=2.5, only the two 2.5 m halves of the source are reached. At R=35, there
+are 30 m left after reaching (0,0); A contributes 30 m, while D, E, and F add
+10 m each as their turn limits permit. At R=70 the complete full-network metric
+ball is available for the three-turn case. The other entries follow by clipping
+the listed subset paths at the radius.
+
+Every table cell is tested once as a scalar input and once as part of the same
+multi-radius/multi-turn sweep (`70,n,2.5,100,35` and `3,0,2,1`). Both forms must
+match the hand-derived value, including partial source/target coverage and
+mixed finite/unlimited radii. As in the other fixtures, all endpoint orders are
+tested: original, reversed, and alternating.
+
+The five two-turn rows are also checked through the network-reach and subset
+collective-reach entry points. The tests sum the emitted full/partial line
+geometry, ensure partial endpoints remain on their original segment, and check
+the collective numerical total independently. Network-reach attribute vectors
+must contain aligned rows. Unlimited radius is included as a control for the
+unchanged standalone-directional network path.
+
+A two-source collective check uses S and A at radius 15 and two turns. S covers
+all 10 m of itself, A's first 10 m, and all 10 m of D. The midpoint of A covers
+A's central 30 m (x=5 through x=35). Their union on A is x=0 through x=35, so the
+total is `10 + 35 + 10 = 55` m. Both the collective total and the emitted
+geometry must equal 55 m in all three orientations. This checks merging of an
+endpoint fragment with an overlapping source-centered fragment without double
+counting or losing the central fragment.
+
 ## Coverage and reports
 
 This validation covers unweighted whole-network MR, DR, JNR, and MDR through
@@ -200,6 +285,10 @@ the shared analysis engine used by the application and CLI. The tree exercises
 unequal lengths, source clipping, partial target coverage, disconnected
 components, degree thresholds, and independent metric and turn constraints.
 The square adds two-sided entry, cycles, and prevention of duplicate coverage.
+The competing-route fixture discriminates DR-first composition from MR-first
+composition and checks scalar/sweep agreement against the same analytic values.
+It also checks network-reach geometry, single-source collective results, and an
+overlapping two-source collective union through their shared-engine entry points.
 The three endpoint orientations check invariance to segment storage direction.
 
 The test binary produces CSV and Markdown reports containing numerical
@@ -210,8 +299,8 @@ oracle tables above are not measured results.
 
 These are compact analytical regression fixtures, not a proof of correctness
 for all networks. They do not validate weighted outputs, mean-distance metrics,
-interactive selections, OD paths, export formatting, every angle boundary, or
-arbitrary competing metric/directional routes. They are also **not** a comparison
+the interactive UI, OD paths, serialized export formatting, every angle boundary, or
+all possible competing metric/directional routes. They are also **not** a comparison
 with an external implementation or with the program cited as reference [19].
 Such a comparison requires separately obtained software, matching parameters
 and inputs, and independently recorded results.

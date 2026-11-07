@@ -846,6 +846,115 @@ inline void CalculateRoadsDRbyBFS(ShapeFileAccessor &fileAccessor, int startRoad
 	}
 }
 
+// DMR alone uses DR first, then metric distances in the induced road subset.
+// Keep the shared MR/DR searches unchanged for all other analysis modes.
+struct DMRReachResult {
+    double length = 0;
+    std::set<int> roads, fullRoads;
+    std::map<int, std::vector<double>> partialCoordinates;
+    std::map<int, std::map<int, double>> partialLengths;
+    std::map<int, std::map<int, int>> partialCoordinateOffsets;
+};
+
+static DMRReachResult getMetricReachInRoadSubset(
+    const ShapeFileAccessor& fileAccessor, int source,
+    const std::set<int>& allowedRoads, double radius)
+{
+    DMRReachResult result;
+    typedef std::pair<double, int> QueueEntry;
+    std::map<int, std::vector<std::pair<int, double>>> adjacency;
+    for (int road : allowedRoads) {
+        const auto& nodes = fileAccessor.roadNode.at(road);
+        const double length = fileAccessor.Length.at(road);
+        adjacency[nodes[0]].push_back({nodes[1], length});
+        adjacency[nodes[1]].push_back({nodes[0], length});
+    }
+    const double infinity = std::numeric_limits<double>::infinity();
+    std::map<int, double> distances;
+    for (const auto& node : adjacency) distances[node.first] = infinity;
+    std::priority_queue<QueueEntry, std::vector<QueueEntry>, std::greater<QueueEntry>> queue;
+    const double halfLength = fileAccessor.Length.at(source) * 0.5;
+    for (int node : fileAccessor.roadNode.at(source)) {
+        distances[node] = halfLength;
+        queue.push({halfLength, node});
+    }
+    extern bool NeedStop;
+    while (!queue.empty()) {
+        if (NeedStop) return result;
+        const QueueEntry current = queue.top();
+        queue.pop();
+        if (current.first != distances.at(current.second)) continue;
+        if (radius >= 0 && current.first > radius) break;
+        for (const auto& edge : adjacency.at(current.second)) {
+            const double candidate = current.first + edge.second;
+            if (candidate < distances.at(edge.first)) {
+                distances[edge.first] = candidate;
+                queue.push({candidate, edge.first});
+            }
+        }
+    }
+
+    for (int road : allowedRoads) {
+        const double length = fileAccessor.Length.at(road);
+        const auto& nodes = fileAccessor.roadNode.at(road);
+        const auto& coordinates = fileAccessor.Route.at(road);
+        if (road == source && radius >= 0 && 2 * radius < length) {
+            // The reachable source portion is centered on its midpoint.
+            result.roads.insert(road);
+            result.length += 2 * radius;
+            const double start = 0.5 - radius / length;
+            const double end = 0.5 + radius / length;
+            result.partialCoordinates[road] = {
+                coordinates[0] + start * (coordinates[2] - coordinates[0]),
+                coordinates[1] + start * (coordinates[3] - coordinates[1]),
+                coordinates[0] + end * (coordinates[2] - coordinates[0]),
+                coordinates[1] + end * (coordinates[3] - coordinates[1])};
+            continue;
+        }
+        double covered[2] = {0, 0};
+        for (int side = 0; side < 2; ++side) {
+            const double distance = distances.at(nodes[side]);
+            if (std::isfinite(distance)) {
+                covered[side] = radius < 0 ? length
+                    : std::max(0.0, std::min(length, radius - distance));
+            }
+        }
+        // The source is reached from its midpoint, not via an endpoint.
+        if (road == source || covered[0] + covered[1] >= length) {
+            result.roads.insert(road);
+            result.fullRoads.insert(road);
+            result.length += length;
+            continue;
+        }
+        if (covered[0] + covered[1] <= 0) continue;
+        result.roads.insert(road);
+        result.length += covered[0] + covered[1];
+        for (int side = 0; side < 2; ++side) {
+            if (covered[side] <= 0) continue;
+            const int from = 2 * side, to = 2 * (1 - side);
+            const double fraction = covered[side] / length;
+            auto& fragments = result.partialCoordinates[road];
+            result.partialLengths[road][nodes[side]] = covered[side];
+            result.partialCoordinateOffsets[road][nodes[side]] = static_cast<int>(fragments.size());
+            fragments.insert(fragments.end(), {
+                coordinates[from], coordinates[from + 1],
+                coordinates[from] + fraction * (coordinates[to] - coordinates[from]),
+                coordinates[from + 1] + fraction * (coordinates[to + 1] - coordinates[from + 1])});
+        }
+    }
+    return result;
+}
+
+static DMRReachResult getDirectionalMetricReach(
+    ShapeFileAccessor& fileAccessor, int source, double turnLimit, double radius)
+{
+    std::set<double> limits{turnLimit};
+    std::map<int, double> directionalDistances;
+    std::map<double, std::set<int>> directionalRoads;
+    CalculateRoadsDRbyBFS(fileAccessor, source, limits, directionalDistances, directionalRoads);
+    return getMetricReachInRoadSubset(fileAccessor, source, directionalRoads.at(turnLimit), radius);
+}
+
 void CalculateRoadsMRbyBFS(ShapeFileAccessor &fileAccessor, std::vector<double> &distances, double MRLimit, int startRoad, std::set<int> &outRoad,
 	std::map<int, std::vector<double>> &mr_partIn, std::set<int> &mr_reachAllInRoads, std::map<int, std::map<int, std::vector<double>>> &mr_partInRoads_all,
 	std::map<int, std::map<int, std::map<int, double>>> &mr_partInReachRoadNodeLen, std::map<int, std::map<int, std::map<int, int>>> &mr_partInReachRoadNodeCoor, 
@@ -5818,99 +5927,24 @@ void Calculation::calculateMDR(ShapeFileAccessor &fileAccessor) {
 						}
 					}
 				}
-				else {	//先做mr搜索
-					CalculateRoadsMRbyBFS(fileAccessor, distances, MRLimit, startRoad, outRoad, partIn, inRoad, partInRoads_all, partInReachRoadNodeLen,
-						mdr_partInReachRoadNodeCoor, partInRoads_all);
-
-					// Touching every segment is not the same as covering every segment.
-					if (inRoad.size() == fileAccessor.roadID.size()) {
-
-						CalculateRoadsDRbyBFS(fileAccessor, startRoad, DRLimitSet, dict_real_min_dist, validRoad);
-
-						//计算mdr
-						for (auto dr_iter = DRLimitSet.begin(); dr_iter != DRLimitSet.end(); dr_iter++) {
-							double DRLimit = *dr_iter;
-
-							//计算mdr
-							double dr = 0;
-							for (auto it2 = validRoad[DRLimit].begin(); it2 != validRoad[DRLimit].end(); it2++) {
-								dr += fileAccessor.Length[*it2];
-							}
-
-							//数据存储
-							DR_all[std::pair<double, double>(DRLimit, MRLimit)][startRoad] = dr;
-
-							//计算Jnc
-							if (isJnc) {
-								int jncDR = CalculateJnc(fileAccessor, validRoad[DRLimit]);
-								JncDR_all[std::pair<double, double>(DRLimit, MRLimit)][startRoad] = jncDR;
-							}
-
-							//计算wgt
-							if (isWgt) {
-								std::map<std::string, double> wgtvalue = CalculateWgt(weight, validRoad[DRLimit]);
-								for (auto wgt_it = wgtvalue.begin(); wgt_it != wgtvalue.end(); wgt_it++) {
-									wgtDR_all[std::pair<double, double>(DRLimit, MRLimit)][wgt_it->first][startRoad] = wgt_it->second;
-								}
-							}
-						}
-					}
-					else {	//需要重构有向图	
-						if (outRoad.size() == 1) {
-							for (auto dr_iter = DRLimitSet.begin(); dr_iter != DRLimitSet.end(); dr_iter++) {
-								double DRLimit = *dr_iter;
-								validRoad[DRLimit] = outRoad;
-							}
-						}
-						else {
-							Generate_new_dict_real_min_dist_partIn_BFS(fileAccessor, outRoad, startRoad, inRoad, partInReachRoadNodeLen[startRoad], old_numEdges, DRLimitSet, validRoad);
-						}
-
-						for (auto dr_iter = DRLimitSet.begin(); dr_iter != DRLimitSet.end(); dr_iter++) {
-							double DRLimit = *dr_iter;
-
-							//计算mdr
-							double dr = 0;
-							for (auto it2 = validRoad[DRLimit].begin(); it2 != validRoad[DRLimit].end(); it2++) {
-								int road_id = *it2;
-								if (validRoad[DRLimit].size() == 1) {
-									// The source-only reach cannot exceed the source's length.
-									dr += std::min(2 * MRLimit, fileAccessor.Length[road_id]);
-									continue;
-								}
-								
-								if (partInReachRoadNodeLen[startRoad].count(road_id)) {
-									for (auto node_it = partInReachRoadNodeLen[startRoad][road_id].begin(); node_it != partInReachRoadNodeLen[startRoad][road_id].end(); node_it++) {
-										int node = node_it->first;
-										double disflow = node_it->second;
-										dr += disflow;
-									}
-								}
-								else {
-									dr += fileAccessor.Length[road_id];
-								}
-							}
-							DR_all[std::pair<double, double>(DRLimit, MRLimit)][startRoad] = dr;
-
-							if (dr < 391)
-								bool check = true;
-
-							//计算Jnc
-							if (isJnc) {
-								int jncDR = CalculateJnc(fileAccessor, validRoad[DRLimit]);
-								JncDR_all[std::pair<double, double>(DRLimit, MRLimit)][startRoad] = jncDR;
-							}
-
-							//计算wgt
-							if (isWgt) {
-								std::map<std::string, double> wgtvalue = CalculateWgt(weight, validRoad[DRLimit]);
-								for (auto wgt_it = wgtvalue.begin(); wgt_it != wgtvalue.end(); wgt_it++) {
-									wgtDR_all[std::pair<double, double>(DRLimit, MRLimit)][wgt_it->first][startRoad] = wgt_it->second;
-								}
-							}
-						}
-
-					}
+				else {
+                    // Match Grasshopper: select DR roads before measuring metric reach.
+                    CalculateRoadsDRbyBFS(fileAccessor, startRoad, DRLimitSet,
+                                         dict_real_min_dist, validRoad);
+                    for (double DRLimit : DRLimitSet) {
+                        DMRReachResult reached = getMetricReachInRoadSubset(
+                            fileAccessor, startRoad, validRoad.at(DRLimit), MRLimit);
+                        if (NeedStop) return;
+                        DR_all[{DRLimit, MRLimit}][startRoad] = reached.length;
+                        if (isJnc)
+                            JncDR_all[{DRLimit, MRLimit}][startRoad] =
+                                CalculateJnc(fileAccessor, reached.roads);
+                        if (isWgt) {
+                            const auto values = CalculateWgt(weight, reached.roads);
+                            for (const auto& value : values)
+                                wgtDR_all[{DRLimit, MRLimit}][value.first][startRoad] = value.second;
+                        }
+                    }
 				}
 
 			}
@@ -6386,345 +6420,75 @@ void Calculation::Net_calculateDR(ShapeFileAccessor &fileAccessor, double subDRL
 					NetreachData["MDR"].Wgt.push_back(wgtvalue);
 			}
 		}
-		else	 //转向限制+里程限制
+		else // DR first, then metric reach within the directionally reachable subgraph.
 		{
-			//删除边-起始边
-			double dis = fileAccessor.Length[startRoad] / 2;
-			int startNode = numVertices_MD;
-			int MD_node1 = fileAccessor.roadNode[startRoad][0];
-			int MD_node2 = fileAccessor.roadNode[startRoad][1];
-			boost::remove_edge(MD_node1, MD_node2, edgGraph_MD);
+			boost::dijkstra_shortest_paths(edgGraph_DR, startRoad, boost::predecessor_map(&parents1[0]).distance_map(&distances1[0]));
+			boost::dijkstra_shortest_paths(edgGraph_DR, startRoad2, boost::predecessor_map(&parents2[0]).distance_map(&distances2[0]));
+			const DMRReachResult reached = getDirectionalMetricReach(fileAccessor, startRoad, subDRLimit, subMRLimit);
+			if (NeedStop) return;
 
-			//添加边-中点到起始边两端
-			ep1.m_base = dis;
-			ep1.m_value = startRoad;
-			boost::add_edge(startNode, MD_node1, ep1, edgGraph_MD);
+			reachRoad_all[startRoad] = reached.roads;
+			partInRoads_all[startRoad] = reached.partialCoordinates;
+			partInReachRoadNodeLen[startRoad] = reached.partialLengths;
 
-			ep2.m_base = dis;
-			ep2.m_value = numEdges_MD;
-			boost::add_edge(startNode, MD_node2, ep2, edgGraph_MD);
+			auto appendRecord = [&](int endRoad, double len, double jnc,
+				const std::map<std::string, double>& wgtvalue) {
+				NetreachData["MDR"].From_OID.push_back(startRoad);
+				NetreachData["MDR"].To_OID.push_back(endRoad);
+				NetreachData["MDR"].Radius.push_back(subMRLimit);
+				NetreachData["MDR"].DirChg.push_back(subDRLimit);
+				NetreachData["MDR"].JncLmt.push_back(0);
+				NetreachData["MDR"].Relen.push_back(len);
+				if (isJnc) NetreachData["MDR"].Jnc.push_back(jnc);
+				if (isWgt) NetreachData["MDR"].Wgt.push_back(wgtvalue);
+			};
 
-			boost::dijkstra_shortest_paths(edgGraph_MD, startNode, boost::predecessor_map(&parents0[0]).distance_map(&distances0[0]));
-
-			std::set<int>().swap(inNode);
-			std::set<int>().swap(inRoad);
-			std::set<int>().swap(outRoad);
-			std::map<int, std::vector<double>>().swap(partIn);
-			partInReachRoadNodeLen.clear();
-
-			//计算inNode：编号0-(顶点数目-1)
-			for (int endNode = 0; endNode < numVertices_MD; endNode++){
-				double tmpdis = distances0[endNode];
-				double td = double(std::round(pow(10, 8)*tmpdis)) / double(pow(10, 8));
-				if (subMRLimit > td)
-					inNode.insert(endNode);
-			}
-
-			//判断是否能够冲出起始边
-			if (2 * subMRLimit >= fileAccessor.Length[startRoad])
-			{
-				//将起始边加入allInLength
-				inRoad.insert(startRoad);
-
-				//全覆盖
-				for (auto it1 = fileAccessor.roadID.begin(); it1 != fileAccessor.roadID.end(); it1++){
-					int endRoad = *it1;
-					if (endRoad == startRoad)	//跳过处理起始边
-						continue;
-
-					double roadLen = fileAccessor.Length[endRoad];
-					int sub_md_node1 = fileAccessor.roadNode[endRoad][0];		//endrode的端点1
-					int sub_md_node2 = fileAccessor.roadNode[endRoad][1];		//endrode的端点2
-
-					// 如果是完全覆盖，则必须同时到达其两个端点
-					if (inNode.count(sub_md_node1) != 0 && inNode.count(sub_md_node2) != 0)
-					{
-						double dist_res1 = subMRLimit - distances0[sub_md_node1];  // 端点1方向越过距离
-						double dist_res2 = subMRLimit - distances0[sub_md_node2];  // 端点2方向越过距离
-						double dist_res = dist_res1 + dist_res2;
-						if (dist_res >= roadLen)   // 只有确定是完全越过，才会加入allIn
-						{
-							inRoad.insert(endRoad);
-						}
-					}
-				}
-
-				//部分覆盖
-				for (auto it1 = fileAccessor.roadID.begin(); it1 != fileAccessor.roadID.end(); it1++){
-					int endRoad = *it1;
-					// 跳过全部覆盖的边
-					if (inRoad.count(endRoad) != 0)
-						continue;
-
-					int sub_md_node1 = fileAccessor.roadNode[endRoad][0];		//endrode的端点1
-					int sub_md_node2 = fileAccessor.roadNode[endRoad][1];		//endrode的端点2
-
-					// 如果是部分覆盖，只要有一个端点有越过
-					if (inNode.count(sub_md_node1) != 0 || inNode.count(sub_md_node2) != 0)
-					{
-						// 检查是否已到达边缘的起点
-						if (inNode.count(sub_md_node1) != 0)
-						{
-							double dis_overflow = subMRLimit - distances0[sub_md_node1];
-							partIn[endRoad].push_back(dis_overflow);
-							partInReachRoadNodeLen[startRoad][endRoad][sub_md_node1] = dis_overflow;
-							mdr_partInReachRoadNodeCoor[startRoad][endRoad][sub_md_node1] = partInRoads_all[startRoad][endRoad].size();
-
-							//计算坐标
-							double x1 = fileAccessor.Route[endRoad][0];
-							double y1 = fileAccessor.Route[endRoad][1];
-							double x2 = fileAccessor.Route[endRoad][2];
-							double y2 = fileAccessor.Route[endRoad][3];
-							double rate = dis_overflow / fileAccessor.Length[endRoad];
-
-							double x = x1 + (x2 - x1)*rate;
-							double y = y1 + (y2 - y1)*rate;
-
-							partInRoads_all[startRoad][endRoad].push_back(x1);
-							partInRoads_all[startRoad][endRoad].push_back(y1);
-							partInRoads_all[startRoad][endRoad].push_back(x);
-							partInRoads_all[startRoad][endRoad].push_back(y);
-						}
-						if (inNode.count(sub_md_node2) != 0)
-						{
-							double dis_overflow = subMRLimit - distances0[sub_md_node2];
-							partIn[endRoad].push_back(dis_overflow);
-							partInReachRoadNodeLen[startRoad][endRoad][sub_md_node2] = dis_overflow;
-							mdr_partInReachRoadNodeCoor[startRoad][endRoad][sub_md_node2] = partInRoads_all[startRoad][endRoad].size();
-
-							//计算坐标
-							double x2 = fileAccessor.Route[endRoad][0];
-							double y2 = fileAccessor.Route[endRoad][1];
-							double x1 = fileAccessor.Route[endRoad][2];
-							double y1 = fileAccessor.Route[endRoad][3];
-							double rate = dis_overflow / fileAccessor.Length[endRoad];
-
-							double x = x1 + (x2 - x1)*rate;
-							double y = y1 + (y2 - y1)*rate;
-
-							partInRoads_all[startRoad][endRoad].push_back(x1);
-							partInRoads_all[startRoad][endRoad].push_back(y1);
-							partInRoads_all[startRoad][endRoad].push_back(x);
-							partInRoads_all[startRoad][endRoad].push_back(y);
-						}
-
-						outRoad.insert(endRoad);
-					}
-				}
-
-				outRoad.insert(inRoad.begin(), inRoad.end());
-			}
-			else
-			{
-				outRoad.insert(startRoad);
-				partIn[startRoad].push_back(2 * subMRLimit);
-
-				//计算坐标
-				double x1 = fileAccessor.Route[startRoad][0];
-				double y1 = fileAccessor.Route[startRoad][1];
-				double x2 = fileAccessor.Route[startRoad][2];
-				double y2 = fileAccessor.Route[startRoad][3];
-				double x_mid = (x1 + x2) / 2;
-				double y_mid = (y1 + y2) / 2;
-
-				int node1 = fileAccessor.roadNode[startRoad][0];		//endrode的端点1
-				int node2 = fileAccessor.roadNode[startRoad][1];		//endrode的端点2
-
-				double rate = 2 * subMRLimit / fileAccessor.Length[startRoad];
-
-				double xn1 = fileAccessor.Route[startRoad][0];
-				double yn1 = fileAccessor.Route[startRoad][1];
-				double xn2 = fileAccessor.Route[startRoad][2];
-				double yn2 = fileAccessor.Route[startRoad][3];
-				double x_1 = x_mid + (xn1 - x_mid)*rate;
-				double y_1 = y_mid + (yn1 - y_mid)*rate;
-				double x_2 = x_mid + (xn2 - x_mid)*rate;
-				double y_2 = y_mid + (yn2 - y_mid)*rate;
-
-				partInRoads_all[startRoad][startRoad].push_back(x_1);
-				partInRoads_all[startRoad][startRoad].push_back(y_1);
-				partInRoads_all[startRoad][startRoad].push_back(x_2);
-				partInRoads_all[startRoad][startRoad].push_back(y_2);
-			}
-
-			//准备数据结构
-			std::map<int, std::map<int, int>> validPartInRoads;
-
-			if (partInRoads_all[startRoad].size() == 1 && partInRoads_all[startRoad].count(startRoad)) {
-				//do nothing
-			}
-			else {
-				//开始dr搜索
-				new_dict_real_min_dist.clear();
-				//Generate_new_dict_real_min_dist(fileAccessor, new_dict_real_min_dist, dict_min_dist, outRoad, startRoad, old_numEdges, parents1, distances1, parents2, distances2);
-
-				std::map<int, std::map<int, int>> partInNodeIDs;
-				std::map<std::tuple<int, int, int>, int> nodeToEdge;
-				std::map<int, std::tuple<int, int, int>> edgeToNode;
-				Generate_new_dict_real_min_dist_partIn(fileAccessor, new_dict_real_min_dist, dict_min_dist, outRoad, startRoad, inRoad, partInReachRoadNodeLen[startRoad],
-					old_numEdges, 2 * old_numEdges, parents1, distances1, parents2, distances2, partInNodeIDs, nodeToEdge, edgeToNode);
-
-				//收集DR有效的道路队列
-				if (subDRLimit != -1) {
-					validRoad.clear();
-					for (auto it2 = outRoad.begin(); it2 != outRoad.end(); it2++) {
-						int road_id = *it2;
-						if (partInReachRoadNodeLen[startRoad].count(road_id)) {
-							if (partInNodeIDs.count(road_id) == 0)
-								continue;
-							for (auto node_it = partInNodeIDs[road_id].begin(); node_it != partInNodeIDs[road_id].end(); node_it++) {
-								int node = node_it->first;
-								//部分覆盖线条在方向上只有出去的份
-								int edge_id = node_it->second;
-								if (new_dict_real_min_dist[edge_id] <= subDRLimit) {
-									validRoad.insert(road_id);
-									validPartInRoads[road_id][node] = edge_id;
-								}
-							}
-						}
-						else {	//全覆盖
-							if (new_dict_real_min_dist[road_id] <= subDRLimit)
-								validRoad.insert(road_id);
-						}
-					}
-					outRoad.clear();
-					outRoad.insert(validRoad.begin(), validRoad.end());
-				}
-				//更新部分覆盖的线条
-				std::map<int, std::vector<double>> tmp_partInRoadsCoor;
-				std::map<int, std::map<int, double>> tmp_partInNodeLen;
-				for (auto road_it = validPartInRoads.begin(); road_it != validPartInRoads.end(); road_it++) {
-					int road_id = road_it->first;
-					for (auto node_it = road_it->second.begin(); node_it != road_it->second.end(); node_it++) {
-						int node = node_it->first;
-						int pos = mdr_partInReachRoadNodeCoor[startRoad][road_id][node];
-						tmp_partInNodeLen[road_id][node] = partInReachRoadNodeLen[startRoad][road_id][node];
-						tmp_partInRoadsCoor[road_id].insert(tmp_partInRoadsCoor[road_id].end(),
-							partInRoads_all[startRoad][road_id].begin() + pos, partInRoads_all[startRoad][road_id].begin() + pos + 4);
-					}
-				}
-				partInRoads_all[startRoad].clear();
-				partInRoads_all[startRoad] = tmp_partInRoadsCoor;
-				partInReachRoadNodeLen[startRoad].clear();
-				partInReachRoadNodeLen[startRoad] = tmp_partInNodeLen;
-			}
-
-			//可达线路
-			reachRoad_all.insert(std::make_pair(startRoad, outRoad));
-
-			for (auto it1 = outRoad.begin(); it1 != outRoad.end(); it1++)
-			{
-				if (NeedStop) {
-					return;
-				}
-
-				int endRoad = *it1;
-
-				int endnode = 0;
-				int endnode1 = fileAccessor.roadNode[endRoad][0];		//endrode的新端点1
-				int endnode2 = fileAccessor.roadNode[endRoad][1];		//endrode的新端点2
-
-				//获取短的分支			
-				if (distances0[endnode1] < distances0[endnode2])
-					endnode = endnode1;
-				else
-					endnode = endnode2;
-
-				if (partInRoads_all[startRoad].count(endRoad) == 0)  //到这条路是全覆盖通行
-				{
-					NetreachData["MDR"].From_OID.push_back(startRoad);
-					NetreachData["MDR"].To_OID.push_back(endRoad);
-					NetreachData["MDR"].Radius.push_back(subMRLimit);
-					NetreachData["MDR"].DirChg.push_back(subDRLimit);
-					NetreachData["MDR"].JncLmt.push_back(0);
-
-					//把经历的道路建一个队列
-					getInRoads_DR(lineRoads, fileAccessor, startRoad, endRoad, parents1, distances1, parents2, distances2, old_numEdges);
-
-					//根据获取到的道路队列，计算Relen
-					double len = CalculateRelen_Net(fileAccessor, lineRoads) - 0.5*fileAccessor.Length[startRoad];
-					if (endRoad == startRoad)
-						len = fileAccessor.Length[endRoad];
-					
-					double jnc = 0;
+			for (int endRoad : reached.roads) {
+				if (NeedStop) return;
+				const auto partial = reached.partialCoordinates.find(endRoad);
+				if (partial == reached.partialCoordinates.end()) {
+					getInRoads_DR(lineRoads, fileAccessor, startRoad, endRoad,
+						parents1, distances1, parents2, distances2, old_numEdges);
+					double len = CalculateRelen_Net(fileAccessor, lineRoads) - 0.5 * fileAccessor.Length[startRoad];
+					if (endRoad == startRoad) len = fileAccessor.Length[endRoad];
+					const double jnc = isJnc ? CalculateJnc(fileAccessor, lineRoads) : 0;
 					std::map<std::string, double> wgtvalue;
-					if (isJnc)
-						jnc = CalculateJnc(fileAccessor, lineRoads);
-					if (isWgt)
-						wgtvalue = CalculateWgt(weight, lineRoads);
-
-					NetreachData["MDR"].Relen.push_back(len);
-					if (isJnc)
-						NetreachData["MDR"].Jnc.push_back(jnc);
-					if (isWgt)
-						NetreachData["MDR"].Wgt.push_back(wgtvalue);
-				}
-				else{
-					//需要区分从哪一端进入->找出起点到部分覆盖的两条路径，影响计算Relen、jnc、wgt
-					if (endRoad == startRoad) {
-						NetreachData["MDR"].From_OID.push_back(startRoad);
-						NetreachData["MDR"].To_OID.push_back(endRoad);
-						NetreachData["MDR"].Radius.push_back(subMRLimit);
-						NetreachData["MDR"].DirChg.push_back(subDRLimit);
-						NetreachData["MDR"].JncLmt.push_back(0);
-
-						lineRoads.clear();
-						lineRoads.insert(startRoad);
-						double rate = subMRLimit / fileAccessor.Length[endRoad];
-
-						double len = subMRLimit;
-						double jnc = 0;
-						std::map<std::string, double> wgtvalue;
-						if (isJnc)
-							jnc = CalculateJnc(fileAccessor, lineRoads);
-						if (isWgt)
-							wgtvalue = CalculateWgtPart(weight, lineRoads, startRoad, endRoad, rate);
-
-						//收集部分通过路的通行距离，注意：可能存在起点能够从endRoad的两端进入，但是不接触
-						partInReachRoadLen[startRoad][endRoad] = std::accumulate(partIn[endRoad].begin(), partIn[endRoad].end(), 0);	//部分通过的总线长度
-
-						NetreachData["MDR"].Relen.push_back(len);
-						if (isJnc)
-							NetreachData["MDR"].Jnc.push_back(jnc);
-						if (isWgt)
-							NetreachData["MDR"].Wgt.push_back(wgtvalue);
-
-						continue;
-					}
-
-					for (auto flow = partInReachRoadNodeLen[startRoad][endRoad].begin(); flow != partInReachRoadNodeLen[startRoad][endRoad].end(); flow++) {
-						//转弯路径可达
-						NetreachData["MDR"].From_OID.push_back(startRoad);
-						NetreachData["MDR"].To_OID.push_back(endRoad);
-						NetreachData["MDR"].Radius.push_back(subMRLimit);
-						NetreachData["MDR"].DirChg.push_back(subDRLimit);
-						NetreachData["MDR"].JncLmt.push_back(0);
-
-						//把经历的道路建一个队列
-						int node = flow->first;
-						int edge_id = validPartInRoads[endRoad][node];
-						double rate = flow->second / fileAccessor.Length[endRoad];
-						getInRoads_DR_partIn(lineRoads, fileAccessor, startRoad, endRoad, edge_id, parents1, distances1, parents2, distances2, old_numEdges);
-
-						double len = subMRLimit;
-						double jnc = 0;
-						std::map<std::string, double> wgtvalue;
-						if (isJnc)
-							jnc = CalculateJnc(fileAccessor, lineRoads);
-						if (isWgt)
-							wgtvalue = CalculateWgtPart(weight, lineRoads, startRoad, endRoad, rate);
-
-						//收集部分通过路的通行距离，注意：可能存在起点能够从endRoad的两端进入，但是不接触
-						partInReachRoadLen[startRoad][endRoad] = std::accumulate(partIn[endRoad].begin(), partIn[endRoad].end(), 0);	//部分通过的总线长度
-
-						NetreachData["MDR"].Relen.push_back(len);
-						if (isJnc)
-							NetreachData["MDR"].Jnc.push_back(jnc);
-						if (isWgt)
-							NetreachData["MDR"].Wgt.push_back(wgtvalue);
-					}
+					if (isWgt) wgtvalue = CalculateWgt(weight, lineRoads);
+					appendRecord(endRoad, len, jnc, wgtvalue);
+					continue;
 				}
 
+				if (endRoad == startRoad) {
+					lineRoads.clear();
+					lineRoads.insert(startRoad);
+					partInReachRoadLen[startRoad][endRoad] = std::min(2 * subMRLimit, fileAccessor.Length[endRoad]);
+					const double jnc = isJnc ? CalculateJnc(fileAccessor, lineRoads) : 0;
+					std::map<std::string, double> wgtvalue;
+					if (isWgt) wgtvalue = CalculateWgtPart(weight, lineRoads, startRoad, endRoad,
+						subMRLimit / fileAccessor.Length[endRoad]);
+					appendRecord(endRoad, subMRLimit, jnc, wgtvalue);
+					continue;
+				}
+
+				// Match the attribute rows to the exported coordinate-fragment order.
+				std::map<int, int> endpointByOffset;
+				for (const auto& endpoint : reached.partialCoordinateOffsets.at(endRoad))
+					endpointByOffset[endpoint.second] = endpoint.first;
+				double reachedLength = 0;
+				for (const auto& endpoint : reached.partialLengths.at(endRoad))
+					reachedLength += endpoint.second;
+				partInReachRoadLen[startRoad][endRoad] = reachedLength;
+				for (const auto& fragment : endpointByOffset) {
+					const int node = fragment.second;
+					const int edgeId = endRoad + (node == fileAccessor.roadNode[endRoad][1] ? old_numEdges : 0);
+					getInRoads_DR_partIn(lineRoads, fileAccessor, startRoad, endRoad, edgeId,
+						parents1, distances1, parents2, distances2, old_numEdges);
+					const double jnc = isJnc ? CalculateJnc(fileAccessor, lineRoads) : 0;
+					std::map<std::string, double> wgtvalue;
+					if (isWgt) wgtvalue = CalculateWgtPart(weight, lineRoads, startRoad, endRoad,
+						reached.partialLengths.at(endRoad).at(node) / fileAccessor.Length[endRoad]);
+					appendRecord(endRoad, subMRLimit, jnc, wgtvalue);
+				}
 			}
 		}
 
@@ -11543,125 +11307,14 @@ void Calculation::get_subset_collective_reach(Calculation *temp, ShapeFileAccess
 
 		/*************************************MDR NetReach********************************************/
 		if (para.isMDR) {
-			//先进行mr搜索
-			/*GetValidRoadsByMR(fileAccessor, fileAccessor.roadNode, fileAccessor.roadID, numVertices, distances, para.MDR_Para.mr_limit, startRoad, outRoad,
-				mdr_partIn, mdr_reachAllInRoads, mdr_partInRoads_all, mdr_partInReachRoadNodeLen, mdr_partInReachRoadNodeCoor);*/
-
-
-				//修改图：删一条，加两条			
-			double dis = fileAccessor.Length[startRoad] / 2;
-			int startNode = numVertices;
-			int node1 = fileAccessor.roadNode[startRoad][0];
-			int node2 = fileAccessor.roadNode[startRoad][1];
-
-			//删除边-起始边
-			boost::remove_edge(node1, node2, edgGraph);
-
-			//添加边-中点到起始边两端
-			ep1.m_base = dis;
-			ep1.m_value = startRoad;
-			boost::add_edge(startNode, node1, ep1, edgGraph);
-
-			ep2.m_base = dis;
-			ep2.m_value = numEdges;
-			boost::add_edge(startNode, node2, ep2, edgGraph);
-
-			boost::dijkstra_shortest_paths(edgGraph, startNode, boost::predecessor_map(&parents[0]).distance_map(&distances[0]));
-
-			GetValidRoadsByMR(fileAccessor, fileAccessor.roadNode, fileAccessor.roadID, numVertices, distances, para.MDR_Para.mr_limit, startRoad,
-				outRoad, mdr_partIn, mdr_reachAllInRoads, mdr_partInRoads_all, mdr_partInReachRoadNodeLen, mdr_partInReachRoadNodeCoor);
-
-			//把图撤销修改：删两条，加一条
-			boost::remove_edge(startNode, node1, edgGraph);
-			boost::remove_edge(startNode, node2, edgGraph);
-
-			ep3.m_base = fileAccessor.Length[startRoad];
-			ep3.m_value = startRoad;
-			boost::add_edge(node1, node2, ep3, edgGraph);
-
-			//把图撤销修改：删两条，加一条
-			boost::remove_edge(startNode, node1, edgGraph);
-			boost::remove_edge(startNode, node2, edgGraph);
-
-			ep3.m_base = fileAccessor.Length[startRoad];
-			ep3.m_value = startRoad;
-			boost::add_edge(node1, node2, ep3, edgGraph);
-
-			if (outRoad.size() == 1 || para.MDR_Para.dc_limit == -1) {
-				//do nothing
-			}
-			else {
-				//开始dr搜索
-				new_dict_real_min_dist.clear();
-				//Generate_new_dict_real_min_dist(fileAccessor, new_dict_real_min_dist, dict_min_dist, outRoad, startRoad, old_numEdges, parents1, distances1, parents2, distances2);
-
-				std::map<int, std::map<int, int>> partInNodeIDs;
-				std::map<std::tuple<int, int, int>, int> nodeToEdge;
-				std::map<int, std::tuple<int, int, int>> edgeToNode;
-				std::map<int, std::map<int, int>> validPartInRoads;
-				Generate_new_dict_real_min_dist_partIn(fileAccessor, new_dict_real_min_dist, dict_min_dist, outRoad, startRoad, mdr_reachAllInRoads[startRoad], mdr_partInReachRoadNodeLen[startRoad],
-					old_numEdges, 2 * old_numEdges, parents1, distances1, parents2, distances2, partInNodeIDs, nodeToEdge, edgeToNode);
-
-				//收集DR有效的道路队列
-				double subDRLimit = para.MDR_Para.dc_limit;
-				validRoad.clear();
-				for (auto it2 = outRoad.begin(); it2 != outRoad.end(); it2++) {
-					int road_id = *it2;
-					if (mdr_partInReachRoadNodeLen[startRoad].count(road_id)) {
-						if (partInNodeIDs.count(road_id) == 0)
-							continue;
-						for (auto node_it = partInNodeIDs[road_id].begin(); node_it != partInNodeIDs[road_id].end(); node_it++) {
-							int node = node_it->first;
-							//部分覆盖线条在方向上只有出去的份
-							int edge_id = node_it->second;
-							if (new_dict_real_min_dist[edge_id] <= subDRLimit) {
-								validRoad.insert(road_id);
-								validPartInRoads[road_id][node] = edge_id;
-							}
-						}
-					}
-					else {	//全覆盖
-						if (new_dict_real_min_dist[road_id] <= subDRLimit)
-							validRoad.insert(road_id);
-					}
-				}
-				outRoad.clear();
-				outRoad.insert(validRoad.begin(), validRoad.end());
-
-				//更新全覆盖线条
-				for (auto road_it = mdr_reachAllInRoads[startRoad].begin(); road_it != mdr_reachAllInRoads[startRoad].end(); ) {
-					int road_id = *road_it;
-					if (outRoad.count(road_id) == 0) {
-						road_it = mdr_reachAllInRoads[startRoad].erase(road_it);
-					}
-					else {
-						road_it++;
-					}
-				}
-
-				//更新部分覆盖的线条
-				std::map<int, std::vector<double>> tmp_partInRoadsCoor;
-				std::map<int, std::map<int, double>> tmp_partInNodeLen;
-				for (auto road_it = validPartInRoads.begin(); road_it != validPartInRoads.end(); road_it++) {
-					int road_id = road_it->first;
-					for (auto node_it = road_it->second.begin(); node_it != road_it->second.end(); node_it++) {
-						int node = node_it->first;
-						int pos = mdr_partInReachRoadNodeCoor[startRoad][road_id][node];
-						tmp_partInNodeLen[road_id][node] = mdr_partInReachRoadNodeLen[startRoad][road_id][node];
-						if (road_id == 129)
-							bool check = true;
-						tmp_partInRoadsCoor[road_id].insert(tmp_partInRoadsCoor[road_id].end(),
-							mdr_partInRoads_all[startRoad][road_id].begin() + pos, mdr_partInRoads_all[startRoad][road_id].begin() + pos + 4);
-					}
-				}
-				mdr_partInRoads_all[startRoad].clear();
-				mdr_partInRoads_all[startRoad] = tmp_partInRoadsCoor;
-				mdr_partInReachRoadNodeLen[startRoad].clear();
-				mdr_partInReachRoadNodeLen[startRoad] = tmp_partInNodeLen;
-			}
-
-			//可达线路
-			mdr_reachRoad_all.insert(std::make_pair(startRoad, outRoad));
+			const DMRReachResult reached = getDirectionalMetricReach(fileAccessor, startRoad,
+				para.MDR_Para.dc_limit, para.MDR_Para.mr_limit);
+			if (NeedStop) return;
+			mdr_reachAllInRoads[startRoad] = reached.fullRoads;
+			mdr_partInRoads_all[startRoad] = reached.partialCoordinates;
+			mdr_partInReachRoadNodeLen[startRoad] = reached.partialLengths;
+			mdr_partInReachRoadNodeCoor[startRoad] = reached.partialCoordinateOffsets;
+			mdr_reachRoad_all[startRoad] = reached.roads;
 		}
 
 		/*************************************JncR NetReach********************************************/
@@ -11693,8 +11346,7 @@ void Calculation::get_subset_collective_reach(Calculation *temp, ShapeFileAccess
 	//mdr
 	std::set<int> mdr_reachAllInRoads_total;
 	std::map<int, std::vector<double>> mdr_partInRoads_total;
-	std::map<int, std::map<int, double>> mdr_partInReachRoadNodeLen_total;
-	std::map<int, std::map<int, std::tuple<int, int, int>>> mdr_partInReachRoadNodeCoor_total;
+	double mdr_partialLengthTotal = 0;
 
 	//jnr
 	std::set<int> jnr_reachAllInRoads_total;
@@ -11766,62 +11418,62 @@ void Calculation::get_subset_collective_reach(Calculation *temp, ShapeFileAccess
 
 	/*************************************MDR NetReach********************************************/
 	if (para.isMDR) {
-		for (auto it = mdr_reachAllInRoads.begin(); it != mdr_reachAllInRoads.end(); it++) {	//全覆盖
-			mdr_reachAllInRoads_total.insert(it->second.begin(), it->second.end());
-		}
-		//mdr的全覆盖、部分覆盖数据与mr不同，需要：要么在计算中处理好，做成跟mr一致，要么在这里单独筛选处理
-		for (auto it = mdr_partInReachRoadNodeLen.begin(); it != mdr_partInReachRoadNodeLen.end(); it++) {	//部分覆盖
-			int start_id = it->first;
-			for (auto iter = it->second.begin(); iter != it->second.end(); iter++) {
-				int road_id = iter->first;
-				if (mdr_reachAllInRoads_total.count(road_id))	//如果被全覆盖了，do nothing
-					continue;
+		for (const auto& source : mdr_reachAllInRoads)
+			mdr_reachAllInRoads_total.insert(source.second.begin(), source.second.end());
 
-				for (auto sub_iter = iter->second.begin(); sub_iter != iter->second.end(); sub_iter++) {
-					int node = sub_iter->first;
-					double len = sub_iter->second;
-					if (len > mdr_partInReachRoadNodeLen_total[road_id][node]) {
-						mdr_partInReachRoadNodeLen_total[road_id][node] = len;
-						mdr_partInReachRoadNodeCoor_total[road_id][node] = { start_id,road_id,mdr_partInReachRoadNodeCoor[start_id][road_id][node] };
-					}
+		// DR-first coverage can include an interior source fragment as well as
+		// fragments reached from either endpoint. Union intervals on each road,
+		// rather than relying on endpoint-only lengths or copying fragments twice.
+		std::map<int, std::vector<std::pair<double, double>>> intervalsByRoad;
+		for (const auto& source : mdr_partInRoads_all) {
+			for (const auto& road : source.second) {
+				if (mdr_reachAllInRoads_total.count(road.first)) continue;
+				const auto& coordinates = fileAccessor.Route.at(road.first);
+				const double dx = coordinates[2] - coordinates[0];
+				const double dy = coordinates[3] - coordinates[1];
+				const double squaredLength = dx * dx + dy * dy;
+				if (squaredLength <= 0) continue;
+				auto position = [&](double x, double y) {
+					return std::max(0.0, std::min(1.0,
+						((x - coordinates[0]) * dx + (y - coordinates[1]) * dy) / squaredLength));
+				};
+				for (size_t offset = 0; offset + 3 < road.second.size(); offset += 4) {
+					const double first = position(road.second[offset], road.second[offset + 1]);
+					const double second = position(road.second[offset + 2], road.second[offset + 3]);
+					const double begin = std::min(first, second), end = std::max(first, second);
+					if (end > begin) intervalsByRoad[road.first].push_back({begin, end});
 				}
 			}
 		}
-		//从双端部分覆盖中抽出全覆盖线条，并删除部分覆盖
-		for (auto it = mdr_partInReachRoadNodeLen_total.begin(); it != mdr_partInReachRoadNodeLen_total.end(); ) {
-			if (it->second.size() < 2) {	//单端覆盖，放过去
-				it++;
+		for (auto& road : intervalsByRoad) {
+			if (NeedStop) return;
+			std::sort(road.second.begin(), road.second.end());
+			std::vector<std::pair<double, double>> merged;
+			for (const auto& interval : road.second) {
+				if (merged.empty() || interval.first > merged.back().second)
+					merged.push_back(interval);
+				else
+					merged.back().second = std::max(merged.back().second, interval.second);
+			}
+			if (merged.size() == 1 && merged.front().first == 0 && merged.front().second == 1) {
+				mdr_reachAllInRoads_total.insert(road.first);
 				continue;
 			}
-
-			double len_all = 0;
-			for (auto iter = it->second.begin(); iter != it->second.end(); iter++)
-				len_all += iter->second;
-
-			if (len_all >= fileAccessor.Length[it->first]) {
-				mdr_reachAllInRoads_total.insert(it->first);
-				it = mdr_partInReachRoadNodeLen_total.erase(it);
-			}
-			else {
-				it++;
+			const auto& coordinates = fileAccessor.Route.at(road.first);
+			const double dx = coordinates[2] - coordinates[0];
+			const double dy = coordinates[3] - coordinates[1];
+			auto& fragments = mdr_partInRoads_total[road.first];
+			for (const auto& interval : merged) {
+				mdr_partialLengthTotal += (interval.second - interval.first) * fileAccessor.Length.at(road.first);
+				fragments.insert(fragments.end(), {
+					coordinates[0] + interval.first * dx, coordinates[1] + interval.first * dy,
+					coordinates[0] + interval.second * dx, coordinates[1] + interval.second * dy});
 			}
 		}
-		//收集部分覆盖的坐标
-		for (auto it = mdr_partInReachRoadNodeLen_total.begin(); it != mdr_partInReachRoadNodeLen_total.end(); it++) {
-			int road_id = it->first;
-			for (auto iter = it->second.begin(); iter != it->second.end(); iter++) {
-				int node = iter->first;
-				std::tuple<int, int, int> elem = mdr_partInReachRoadNodeCoor_total[road_id][node];
-				int startRoad = get<0>(elem), b = get<1>(elem), c = get<2>(elem);
-				mdr_partInRoads_total[road_id].insert(mdr_partInRoads_total[road_id].begin(),
-					mdr_partInRoads_all[startRoad][road_id].begin(), mdr_partInRoads_all[startRoad][road_id].end());
-			}
-		}
-		//收集绘图备用数据
 		temp->subset_reachRoad_all["MDR"] = mdr_reachAllInRoads_total;
 		temp->subset_partInRoads_all["MDR"] = mdr_partInRoads_total;
 	}
-	
+
 	/*************************************JnR NetReach********************************************/
 	if (para.isJnR) {
 		for (auto it = jnr_reachAllInRoads.begin(); it != jnr_reachAllInRoads.end(); it++) {
@@ -11858,12 +11510,7 @@ void Calculation::get_subset_collective_reach(Calculation *temp, ShapeFileAccess
 		for (auto it = mdr_reachAllInRoads_total.begin(); it != mdr_reachAllInRoads_total.end(); it++) {	//全覆盖
 			sum_mdr_len += fileAccessor.Length[*it];
 		}
-		for (auto it = mdr_partInReachRoadNodeLen_total.begin(); it != mdr_partInReachRoadNodeLen_total.end(); it++) {
-			int road_id = it->first;
-			for (auto iter = it->second.begin(); iter != it->second.end(); iter++) {
-				sum_mdr_len += iter->second;
-			}
-		}
+		sum_mdr_len += mdr_partialLengthTotal;
 	}
 
 	//数据存入results
