@@ -20,6 +20,12 @@ Supported input formats:
 
 For Shapefile input, analysis results are written into the source file. For CSV/TXT input, UrConnect also creates a same-named Shapefile so results can be used in GIS.
 
+### Coordinate System And Endpoint Connections
+
+Use a projected coordinate reference system with metre units. UrConnect calculates lengths directly from the input X/Y coordinates; it does not read the `.prj` file, validate the coordinate reference system, reproject coordinates, or warn when input is unprojected (longitude/latitude). Reproject the data in GIS before importing it; supplying a `.prj` file alone does not convert the coordinates.
+
+Snap endpoints that should connect before import. UrConnect identifies shared endpoints by matching X/Y coordinate strings formatted to 10 significant digits. It has no configurable snapping tolerance, and this formatting is not a fixed distance tolerance. Split lines at intended junctions so that they share endpoints.
+
 ## Core Concepts
 
 Reach

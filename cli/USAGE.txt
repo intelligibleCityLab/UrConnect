@@ -15,9 +15,12 @@ asset, replace urconnect-cli.exe with urconnect-cli-windows-x64.exe.
 INPUT AND OUTPUT PATHS
 Use a copy of your dataset. All features must be two-vertex line segments.
 Keep .shp, .shx and .dbf together, and retain .prj/.cpg and other sidecar files.
-Use projected coordinates in metres for metre-based radii; no reprojection is
-performed. Quote paths with spaces. Relative paths use the terminal's current
-working directory, not the executable's directory.
+Use projected coordinates in metres for metre-based radii. The CLI does not read
+.prj, validate the coordinate reference system, reproject coordinates, or warn
+about unprojected input. Snap endpoints in GIS before import: endpoint matching
+uses X/Y coordinate strings formatted to 10 significant digits, with no
+configurable snapping tolerance. Quote paths with spaces. Relative paths use the
+terminal's current working directory, not the executable's directory.
 
 There is NO --output option: copy the complete dataset to the desired output
 folder, then pass that copy's .shp path. Whole-network results update its DBF.

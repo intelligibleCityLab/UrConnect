@@ -68,7 +68,8 @@ Work on a copy of the complete Shapefile dataset. Analyses can append or update 
 
 - The CLI accepts **Shapefile input only**, not the desktop application's CSV/TXT network inputs. Keep matching `.shp`, `.shx`, and `.dbf` files together; retain `.prj` and other sidecars when copying data.
 - Each analyzed road must be a **two-vertex line segment**. Prepare every feature in this format before running; do not rely on the importer skipping unsupported geometry safely. Split/snap/clean the network in GIS first; geometric crossings do not automatically create junctions.
-- Use projected coordinates in metres for metre-based radii and distances. The CLI does not reproject data; metric calculations use the input coordinate units.
+- Use projected coordinates in metres for metre-based radii and distances. The CLI uses the input coordinate units directly; it does not read `.prj`, validate the coordinate reference system, reproject data, or warn about unprojected input.
+- Snap endpoints in GIS before import. Shared endpoints are identified by matching X/Y coordinate strings formatted to 10 significant digits, with no configurable snapping tolerance. See [coordinate and endpoint requirements](getting-started.md).
 - Road IDs for `--from`, `--to`, and OD CSVs are **zero-based Shapefile record indices**, not values from a custom `ID`/`FID` attribute. Reordering the dataset changes these IDs.
 - Weight fields must already exist as numeric DBF attributes. Use their exact names. The input DBF and output directories must be writable; close other applications holding file locks.
 
